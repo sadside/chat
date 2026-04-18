@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from app.config import Settings, get_settings
+from app.core.rate_limit import limiter
 from app.core.security import cookie_kwargs
 from app.db.models import User
 from app.deps import get_auth_service, get_current_user
@@ -13,7 +14,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/request-otp", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def request_otp(
+    request: Request,
     payload: RequestOtpIn,
     service: AuthService = Depends(get_auth_service),
 ) -> None:
