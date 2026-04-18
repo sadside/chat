@@ -1,11 +1,12 @@
 """SSE streaming for chat messages. Handles send, regenerate, abort."""
+
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -14,7 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.db.models import Chat, Message
 from app.db.session import AsyncSessionLocal
-from app.schemas.message import MessageOut
 from app.services.context_builder import build_context
 from app.services.llm_client import LlmClient
 from app.services.title_generator import generate_title
@@ -61,11 +61,7 @@ class MessageService:
         return chat
 
     async def _get_messages(self, chat_id: UUID) -> list[Message]:
-        stmt = (
-            select(Message)
-            .where(Message.chat_id == chat_id)
-            .order_by(Message.created_at.asc())
-        )
+        stmt = select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at.asc())
         return list((await self._db.execute(stmt)).scalars().all())
 
     async def _count_exchanges(self, chat_id: UUID) -> int:
@@ -148,8 +144,9 @@ class MessageService:
                 # FRESH session — the injected session may be in an invalid
                 # state after cancellation. Use AsyncSessionLocal directly.
                 async with AsyncSessionLocal() as fresh:
-                    from app.db.models import Message as MsgModel  # noqa: PLC0415
-                    from sqlalchemy import update  # noqa: PLC0415
+                    from sqlalchemy import update
+
+                    from app.db.models import Message as MsgModel
 
                     await fresh.execute(
                         update(MsgModel)
@@ -159,16 +156,17 @@ class MessageService:
                             aborted=True,
                         )
                     )
-                    from app.db.models import Chat as ChatModel  # noqa: PLC0415
-                    import datetime as _dt  # noqa: PLC0415
+                    import datetime as _dt
+
+                    from app.db.models import Chat as ChatModel
 
                     await fresh.execute(
                         update(ChatModel)
                         .where(ChatModel.id == chat_id)
-                        .values(updated_at=_dt.datetime.now(_dt.timezone.utc))
+                        .values(updated_at=_dt.datetime.now(_dt.UTC))
                     )
                     await fresh.commit()
-                return
+                return  # noqa: B012
 
         # 5. Persist completed assistant message
         full_content = "".join(accumulated)
@@ -177,20 +175,19 @@ class MessageService:
         await self._db.flush()
 
         # Touch chat updated_at
-        from sqlalchemy import update  # noqa: PLC0415
-        from app.db.models import Chat as ChatModel  # noqa: PLC0415
+        from sqlalchemy import update
+
+        from app.db.models import Chat as ChatModel
 
         await self._db.execute(
-            update(ChatModel)
-            .where(ChatModel.id == chat_id)
-            .values(updated_at=datetime.now(timezone.utc))
+            update(ChatModel).where(ChatModel.id == chat_id).values(updated_at=datetime.now(UTC))
         )
         await self._db.flush()
 
         # 6. Fire title generation if this is the first exchange
         exchanges_before = await self._count_exchanges_before(chat_id, user_msg.id)
         if exchanges_before == 0:
-            asyncio.create_task(
+            _task = asyncio.create_task(  # noqa: RUF006
                 generate_title(self._llm, chat_id, content, full_content)
             )
 
@@ -203,9 +200,7 @@ class MessageService:
             },
         )
 
-    async def stream_regenerate(
-        self, user_id: UUID, chat_id: UUID
-    ) -> AsyncIterator[bytes]:
+    async def stream_regenerate(self, user_id: UUID, chat_id: UUID) -> AsyncIterator[bytes]:
         """
         Remove last assistant message, replay streaming with the same history.
         Yields same SSE sequence as stream_new_message (minus user_message event).
@@ -225,7 +220,9 @@ class MessageService:
                 last_assistant = msg
                 break
         if last_assistant is None:
-            yield _sse("error", {"code": "NOT_FOUND", "message": "No assistant message to regenerate"})
+            yield _sse(
+                "error", {"code": "NOT_FOUND", "message": "No assistant message to regenerate"}
+            )
             return
 
         await self._db.delete(last_assistant)
@@ -267,8 +264,9 @@ class MessageService:
         finally:
             if aborted:
                 async with AsyncSessionLocal() as fresh:
-                    from app.db.models import Message as MsgModel  # noqa: PLC0415
-                    from sqlalchemy import update  # noqa: PLC0415
+                    from sqlalchemy import update
+
+                    from app.db.models import Message as MsgModel
 
                     await fresh.execute(
                         update(MsgModel)
@@ -276,20 +274,19 @@ class MessageService:
                         .values(content="".join(accumulated), aborted=True)
                     )
                     await fresh.commit()
-                return
+                return  # noqa: B012
 
         full_content = "".join(accumulated)
         assistant_msg.content = full_content
         assistant_msg.aborted = False
         await self._db.flush()
 
-        from sqlalchemy import update  # noqa: PLC0415
-        from app.db.models import Chat as ChatModel  # noqa: PLC0415
+        from sqlalchemy import update
+
+        from app.db.models import Chat as ChatModel
 
         await self._db.execute(
-            update(ChatModel)
-            .where(ChatModel.id == chat_id)
-            .values(updated_at=datetime.now(timezone.utc))
+            update(ChatModel).where(ChatModel.id == chat_id).values(updated_at=datetime.now(UTC))
         )
         await self._db.flush()
 
@@ -306,9 +303,7 @@ class MessageService:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    async def _count_exchanges_before(
-        self, chat_id: UUID, before_user_msg_id: UUID
-    ) -> int:
+    async def _count_exchanges_before(self, chat_id: UUID, before_user_msg_id: UUID) -> int:
         """Count user messages in this chat before the given user message id."""
         msgs = await self._get_messages(chat_id)
         count = 0
@@ -328,8 +323,9 @@ class MessageService:
     ) -> None:
         """Persist assistant message via a fresh session (safe after any error)."""
         async with AsyncSessionLocal() as fresh:
-            from app.db.models import Message as MsgModel  # noqa: PLC0415
-            from sqlalchemy import update  # noqa: PLC0415
+            from sqlalchemy import update
+
+            from app.db.models import Message as MsgModel
 
             await fresh.execute(
                 update(MsgModel)

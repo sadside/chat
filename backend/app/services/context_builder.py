@@ -1,4 +1,5 @@
 """Pure function: list[Message] → OpenAI-compatible messages list with truncation."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
 
 
 def build_context(
-    messages: list["Message"],
+    messages: list[Message],
     context_window: int,
     fill_ratio: float = 0.75,
 ) -> list[dict[str, str]]:

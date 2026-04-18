@@ -1,7 +1,8 @@
 """Chat CRUD with ownership checks."""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select, update
@@ -17,11 +18,7 @@ class ChatService:
         self._db = session
 
     async def list_chats(self, user_id: UUID) -> list[Chat]:
-        stmt = (
-            select(Chat)
-            .where(Chat.user_id == user_id)
-            .order_by(Chat.updated_at.desc())
-        )
+        stmt = select(Chat).where(Chat.user_id == user_id).order_by(Chat.updated_at.desc())
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
 
@@ -39,12 +36,10 @@ class ChatService:
             raise NotFoundError("Chat not found")
         return chat
 
-    async def rename_chat(
-        self, chat_id: UUID, user_id: UUID, data: ChatUpdateIn
-    ) -> Chat:
+    async def rename_chat(self, chat_id: UUID, user_id: UUID, data: ChatUpdateIn) -> Chat:
         chat = await self.get_chat_or_404(chat_id, user_id)
         chat.title = data.title
-        chat.updated_at = datetime.now(timezone.utc)
+        chat.updated_at = datetime.now(UTC)
         await self._db.flush()
         await self._db.refresh(chat)
         return chat
@@ -55,11 +50,7 @@ class ChatService:
 
     async def list_messages(self, chat_id: UUID, user_id: UUID) -> list[Message]:
         await self.get_chat_or_404(chat_id, user_id)
-        stmt = (
-            select(Message)
-            .where(Message.chat_id == chat_id)
-            .order_by(Message.created_at.asc())
-        )
+        stmt = select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at.asc())
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
 
@@ -81,7 +72,5 @@ class ChatService:
     async def touch_updated_at(self, chat_id: UUID) -> None:
         """Bump updated_at without full fetch — used after new message saved."""
         await self._db.execute(
-            update(Chat)
-            .where(Chat.id == chat_id)
-            .values(updated_at=datetime.now(timezone.utc))
+            update(Chat).where(Chat.id == chat_id).values(updated_at=datetime.now(UTC))
         )

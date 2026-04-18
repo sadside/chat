@@ -1,8 +1,9 @@
 """Best-effort async title generation via LLM. Runs as asyncio.create_task."""
+
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import update
@@ -37,9 +38,7 @@ async def generate_title(
             {"role": "system", "content": _SYSTEM},
             {
                 "role": "user",
-                "content": _USER_TMPL.format(
-                    user_msg=user_msg, assistant_msg=assistant_msg
-                ),
+                "content": _USER_TMPL.format(user_msg=user_msg, assistant_msg=assistant_msg),
             },
         ]
         raw_title = await llm.complete(messages, max_tokens=30, temperature=0.3)
@@ -49,13 +48,13 @@ async def generate_title(
 
         async with AsyncSessionLocal() as session:
             # Import here to avoid circular at module level
-            from app.db.models import Chat  # noqa: PLC0415
+            from app.db.models import Chat
 
             await session.execute(
                 update(Chat)
                 .where(Chat.id == chat_id)
-                .values(title=title, updated_at=datetime.now(timezone.utc))
+                .values(title=title, updated_at=datetime.now(UTC))
             )
             await session.commit()
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("TitleGenerator failed for chat %s", chat_id)

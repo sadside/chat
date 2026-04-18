@@ -4,6 +4,7 @@ Integration tests for SSE message streaming.
 LlmClient is replaced via dependency_overrides with a mock that yields
 pre-defined deltas. All DB writes go to the test database.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -12,17 +13,16 @@ from collections.abc import AsyncIterator
 from uuid import UUID
 
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 
 from app.core.exceptions import LlmUnavailableError
 from app.deps import get_llm_client
 from app.services.llm_client import LlmClient
 
-
 # ---------------------------------------------------------------------------
 # Mock LlmClient helpers
 # ---------------------------------------------------------------------------
+
 
 class MockLlmClient:
     """Configurable mock: returns preset deltas or raises on stream()."""
@@ -46,8 +46,10 @@ class MockLlmClient:
 
 def _override_llm(deltas: list[str] | None = None, raise_exc: Exception | None = None):
     mock = MockLlmClient(deltas=deltas, raise_exc=raise_exc)
+
     def _dep() -> LlmClient:
         return mock  # type: ignore[return-value]
+
     return _dep
 
 
@@ -57,9 +59,9 @@ def _parse_sse(raw: str) -> list[dict]:
     current: dict = {}
     for line in raw.splitlines():
         if line.startswith("event:"):
-            current["event"] = line[len("event:"):].strip()
+            current["event"] = line[len("event:") :].strip()
         elif line.startswith("data:"):
-            current["data"] = json.loads(line[len("data:"):].strip())
+            current["data"] = json.loads(line[len("data:") :].strip())
         elif line == "" and current:
             events.append(current)
             current = {}
@@ -71,6 +73,7 @@ def _parse_sse(raw: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_send_message_sse_sequence(auth_client: AsyncClient, app) -> None:
@@ -107,6 +110,7 @@ async def test_send_message_sse_sequence(auth_client: AsyncClient, app) -> None:
 async def test_send_message_saves_to_db(auth_client: AsyncClient, app, db) -> None:
     """After SSE stream, both user and assistant messages exist in DB."""
     from sqlalchemy import select
+
     from app.db.models import Message
 
     app.dependency_overrides[get_llm_client] = _override_llm(["Answer"])
@@ -123,12 +127,16 @@ async def test_send_message_saves_to_db(auth_client: AsyncClient, app, db) -> No
 
     async with db() as session:
         msgs = (
-            await session.execute(
-                select(Message)
-                .where(Message.chat_id == UUID(chat_id))
-                .order_by(Message.created_at)
+            (
+                await session.execute(
+                    select(Message)
+                    .where(Message.chat_id == UUID(chat_id))
+                    .order_by(Message.created_at)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
     assert len(msgs) == 2
     assert msgs[0].role == "user"
@@ -176,9 +184,7 @@ async def test_regenerate_removes_last_assistant_and_restreams(
 
     app.dependency_overrides[get_llm_client] = _override_llm(["Regenerated"])
 
-    async with auth_client.stream(
-        "POST", f"/api/v1/chats/{chat_id}/regenerate"
-    ) as resp:
+    async with auth_client.stream("POST", f"/api/v1/chats/{chat_id}/regenerate") as resp:
         raw = await resp.aread()
 
     app.dependency_overrides.pop(get_llm_client, None)
@@ -217,18 +223,14 @@ async def test_export_markdown_snapshot(auth_client: AsyncClient, app) -> None:
 
 
 @pytest.mark.asyncio
-async def test_title_generator_called_on_first_exchange(
-    auth_client: AsyncClient, app
-) -> None:
+async def test_title_generator_called_on_first_exchange(auth_client: AsyncClient, app) -> None:
     """TitleGenerator.generate_title is invoked on the first message exchange."""
     from unittest.mock import AsyncMock, patch
 
     app.dependency_overrides[get_llm_client] = _override_llm(["Answer"])
     chat_id = (await auth_client.post("/api/v1/chats")).json()["id"]
 
-    with patch(
-        "app.services.message_service.generate_title", new_callable=AsyncMock
-    ) as mock_title:
+    with patch("app.services.message_service.generate_title", new_callable=AsyncMock) as mock_title:
         # Wrap in a task that resolves immediately
         mock_title.return_value = None
 
@@ -245,7 +247,7 @@ async def test_title_generator_called_on_first_exchange(
     app.dependency_overrides.pop(get_llm_client, None)
     # generate_title was scheduled (may need slight delay for task to run)
     # We verify by checking the patch was called with correct args pattern
-    assert mock_title.called or True  # best-effort; task scheduling is async
+    assert True  # best-effort; task scheduling is async
 
 
 @pytest.mark.asyncio
@@ -259,9 +261,7 @@ async def test_send_message_ownership_check(
     chat_id = (await auth_client.post("/api/v1/chats")).json()["id"]
 
     # B tries to post to A's chat
-    resp = await auth_client_b.post(
-        f"/api/v1/chats/{chat_id}/messages", json={"content": "hack"}
-    )
+    resp = await auth_client_b.post(f"/api/v1/chats/{chat_id}/messages", json={"content": "hack"})
     # StreamingResponse starts; ownership check fails → 404 before stream
     assert resp.status_code in (404, 200)  # 404 preferred; accept 200+error event
     if resp.status_code == 200:

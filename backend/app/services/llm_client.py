@@ -1,4 +1,5 @@
 """Async wrapper around vLLM OpenAI-compatible /v1/chat/completions."""
+
 from __future__ import annotations
 
 import json
@@ -43,18 +44,14 @@ class LlmClient:
             "max_tokens": max_tokens if max_tokens is not None else self._max_tokens,
         }
         try:
-            async with self._client.stream(
-                "POST", "/chat/completions", json=payload
-            ) as response:
+            async with self._client.stream("POST", "/chat/completions", json=payload) as response:
                 if response.status_code >= 500:
                     await response.aread()
-                    raise LlmUnavailableError(
-                        f"vLLM returned {response.status_code}"
-                    )
+                    raise LlmUnavailableError(f"vLLM returned {response.status_code}")
                 async for line in response.aiter_lines():
                     if not line.startswith("data:"):
                         continue
-                    raw = line[len("data:"):].strip()
+                    raw = line[len("data:") :].strip()
                     if raw == "[DONE]":
                         return
                     try:

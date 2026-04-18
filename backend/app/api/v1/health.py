@@ -1,4 +1,5 @@
 """Health check endpoint — probes DB (via existing engine) and vLLM."""
+
 from __future__ import annotations
 
 import httpx
@@ -22,6 +23,6 @@ async def health() -> dict:
             resp = await client.get(f"{settings.vllm_url}/models")
             if resp.status_code < 500:
                 vllm_status = "up"
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
     return {"status": "ok", "vllm": vllm_status}

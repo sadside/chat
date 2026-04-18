@@ -5,7 +5,6 @@ from collections.abc import AsyncGenerator
 from datetime import timedelta
 from unittest.mock import AsyncMock
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -111,9 +110,7 @@ async def auth_client(app) -> AsyncGenerator[AsyncClient, None]:
         algorithm=settings.jwt_algorithm,
         ttl=timedelta(hours=settings.jwt_ttl_hours),
     )
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         client.cookies.set(settings.jwt_cookie_name, token)
         yield client
 
@@ -135,9 +132,7 @@ async def auth_client_b(app) -> AsyncGenerator[AsyncClient, None]:
         algorithm=settings.jwt_algorithm,
         ttl=timedelta(hours=settings.jwt_ttl_hours),
     )
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         client.cookies.set(settings.jwt_cookie_name, token)
         yield client
 

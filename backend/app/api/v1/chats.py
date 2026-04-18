@@ -1,4 +1,5 @@
 """Chat CRUD endpoints."""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -6,7 +7,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import PlainTextResponse
 
-from app.core.exceptions import NotFoundError
 from app.db.models import User
 from app.deps import get_chat_service, get_current_user
 from app.schemas.chat import ChatSummary, ChatUpdateIn

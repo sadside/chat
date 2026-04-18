@@ -1,4 +1,5 @@
 """Integration tests for chat CRUD endpoints."""
+
 from __future__ import annotations
 
 import pytest
@@ -34,9 +35,7 @@ async def test_list_chats_after_create(auth_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_rename_chat(auth_client: AsyncClient) -> None:
     chat_id = (await auth_client.post("/api/v1/chats")).json()["id"]
-    resp = await auth_client.patch(
-        f"/api/v1/chats/{chat_id}", json={"title": "My Chat"}
-    )
+    resp = await auth_client.patch(f"/api/v1/chats/{chat_id}", json={"title": "My Chat"})
     assert resp.status_code == 200
     assert resp.json()["title"] == "My Chat"
 
@@ -44,9 +43,7 @@ async def test_rename_chat(auth_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_rename_chat_title_too_short(auth_client: AsyncClient) -> None:
     chat_id = (await auth_client.post("/api/v1/chats")).json()["id"]
-    resp = await auth_client.patch(
-        f"/api/v1/chats/{chat_id}", json={"title": ""}
-    )
+    resp = await auth_client.patch(f"/api/v1/chats/{chat_id}", json={"title": ""})
     assert resp.status_code == 422
 
 
@@ -62,6 +59,7 @@ async def test_delete_chat(auth_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_delete_chat_not_found(auth_client: AsyncClient) -> None:
     import uuid
+
     resp = await auth_client.delete(f"/api/v1/chats/{uuid.uuid4()}")
     assert resp.status_code == 404
 
@@ -77,9 +75,7 @@ async def test_ownership_isolation(
     resp = await auth_client_b.get(f"/api/v1/chats/{chat_id}/messages")
     assert resp.status_code == 404
 
-    resp = await auth_client_b.patch(
-        f"/api/v1/chats/{chat_id}", json={"title": "hijacked"}
-    )
+    resp = await auth_client_b.patch(f"/api/v1/chats/{chat_id}", json={"title": "hijacked"})
     assert resp.status_code == 404
 
     resp = await auth_client_b.delete(f"/api/v1/chats/{chat_id}")

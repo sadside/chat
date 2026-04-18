@@ -1,7 +1,7 @@
 """Unit tests for context_builder — no DB, no I/O."""
+
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock
 
 from app.services.context_builder import build_context
@@ -36,7 +36,7 @@ class TestBuildContext:
         # Each message = 400 chars → ~100 tokens. budget = 4 * 0.75 * 100 = 300 tokens → 3 messages max
         big_content = "x" * 400
         msgs = [_msg("user", big_content) for _ in range(6)]
-        result = build_context(msgs, context_window=1600, fill_ratio=0.75)
+        build_context(msgs, context_window=1600, fill_ratio=0.75)
         # budget = 1200 tokens; each msg = 100 tokens → 12 fit, but we only have 6
         # Use small window: context_window=400 → budget=300 tokens → 3 messages
         result2 = build_context(msgs, context_window=400, fill_ratio=0.75)

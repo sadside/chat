@@ -1,10 +1,11 @@
 """Unit tests for LlmClient using httpx mock transport."""
+
 from __future__ import annotations
 
 import json
-import pytest
+
 import httpx
-from unittest.mock import AsyncMock, patch
+import pytest
 
 from app.core.exceptions import LlmUnavailableError
 from app.services.llm_client import LlmClient
@@ -36,9 +37,7 @@ async def test_stream_yields_deltas():
     client._model = "test-model"
     client._temperature = 0.7
     client._max_tokens = 100
-    client._client = httpx.AsyncClient(
-        base_url="http://fake", transport=transport
-    )
+    client._client = httpx.AsyncClient(base_url="http://fake", transport=transport)
     deltas = []
     async for d in client.stream([{"role": "user", "content": "hi"}]):
         deltas.append(d)
@@ -53,9 +52,7 @@ async def test_stream_raises_on_5xx():
     client._model = "test-model"
     client._temperature = 0.7
     client._max_tokens = 100
-    client._client = httpx.AsyncClient(
-        base_url="http://fake", transport=transport
-    )
+    client._client = httpx.AsyncClient(base_url="http://fake", transport=transport)
     with pytest.raises(LlmUnavailableError):
         async for _ in client.stream([{"role": "user", "content": "hi"}]):
             pass
@@ -64,17 +61,13 @@ async def test_stream_raises_on_5xx():
 
 @pytest.mark.asyncio
 async def test_complete_returns_content():
-    body = json.dumps({
-        "choices": [{"message": {"content": "A title"}}]
-    }).encode()
+    body = json.dumps({"choices": [{"message": {"content": "A title"}}]}).encode()
     transport = MockTransport(body=body)
     client = LlmClient.__new__(LlmClient)
     client._model = "test-model"
     client._temperature = 0.7
     client._max_tokens = 100
-    client._client = httpx.AsyncClient(
-        base_url="http://fake", transport=transport
-    )
+    client._client = httpx.AsyncClient(base_url="http://fake", transport=transport)
     result = await client.complete([{"role": "user", "content": "prompt"}])
     assert result == "A title"
     await client.aclose()
@@ -87,9 +80,7 @@ async def test_complete_raises_on_5xx():
     client._model = "test-model"
     client._temperature = 0.7
     client._max_tokens = 100
-    client._client = httpx.AsyncClient(
-        base_url="http://fake", transport=transport
-    )
+    client._client = httpx.AsyncClient(base_url="http://fake", transport=transport)
     with pytest.raises(LlmUnavailableError):
         await client.complete([{"role": "user", "content": "p"}])
     await client.aclose()
