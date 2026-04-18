@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, X } from 'lucide-react';
-import { useParams } from '@tanstack/react-router';
+import { useRouterState } from '@tanstack/react-router';
 import { Button } from '@/shared/ui/button';
 import {
   AlertDialog,
@@ -28,14 +28,11 @@ export function Sidebar() {
   const { exportChat } = useExportChat();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
-  let currentChatId: string | undefined;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const params = useParams({ from: '/chats/$chatId' });
-    currentChatId = params.chatId;
-  } catch {
-    currentChatId = undefined;
-  }
+  // Derive currentChatId from pathname without using route-typed useParams,
+  // which would require a conditional hook and break the rules-of-hooks.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const match = pathname.match(/^\/chats\/([^/]+)/);
+  const currentChatId = match ? match[1] : undefined;
 
   return (
     <nav className="flex h-full flex-col gap-1 px-2 py-3 bg-[--color-sidebar]">

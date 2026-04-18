@@ -16,9 +16,9 @@ export function useChatsQuery() {
   });
 }
 
-export function useChatQuery(id: string) {
+export function useChatQuery(id: string | undefined) {
   return useQuery({
-    queryKey: chatKeys.detail(id),
+    queryKey: chatKeys.detail(id ?? '__none__'),
     queryFn: () => api.get(`chats/${id}`).json<Chat>(),
     enabled: Boolean(id),
     staleTime: 30_000,

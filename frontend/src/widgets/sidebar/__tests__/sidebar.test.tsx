@@ -33,7 +33,7 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
   const mod = await importOriginal() as any;
   return {
     ...mod,
-    useParams: vi.fn().mockImplementation(() => { throw new Error('Not on chat route'); }),
+    useRouterState: vi.fn().mockImplementation(({ select }: { select: (s: { location: { pathname: string } }) => unknown }) => select({ location: { pathname: '/' } })),
     Link: ({ children, ...props }: { children: React.ReactNode; to: string; params?: Record<string, string>; className?: string }) => <a href={String(props.to)}>{children}</a>,
   };
 });
