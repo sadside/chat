@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en" suppressHydrationWarning>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nova</title>
+    <!--
+      Anti-flash theme script.
+      Runs synchronously before first paint.
+      Reads localStorage["nova-theme"]:
+        "dark"   → adds class "dark" to <html>
+        "light"  → no class
+        "system" or missing → uses prefers-color-scheme
+      Must stay inline — do NOT move to an external script file.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('nova-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark =
+            stored === 'dark' || (stored !== 'light' && prefersDark);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {
+          // localStorage blocked (private browsing, etc.) — default to light
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html>
