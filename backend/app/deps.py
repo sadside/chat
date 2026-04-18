@@ -13,9 +13,12 @@ from app.core.security import decode_access_token
 from app.db.models import User
 from app.db.session import AsyncSessionLocal
 from app.services.auth_service import AuthService
+from app.services.chat_service import ChatService
 from app.services.email.base import EmailSender
 from app.services.email.console import ConsoleSender
 from app.services.email.smtp import SMTPSender
+from app.services.llm_client import LlmClient
+from app.services.message_service import MessageService
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -85,3 +88,33 @@ async def get_current_user(
     if user is None:
         raise UnauthorizedError()
     return user
+
+
+def get_llm_client(settings: Settings = Depends(get_settings)) -> LlmClient:  # noqa: B008
+    return LlmClient(
+        base_url=settings.vllm_url,
+        model=settings.vllm_model,
+        timeout=settings.vllm_timeout_seconds,
+        temperature=settings.vllm_temperature,
+        max_tokens=settings.vllm_max_tokens,
+    )
+
+
+def get_chat_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+) -> ChatService:
+    return ChatService(session=session)
+
+
+def get_message_service(
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    llm: LlmClient = Depends(get_llm_client),  # noqa: B008
+    settings: Settings = Depends(get_settings),  # noqa: B008
+) -> MessageService:
+    return MessageService(
+        session=session,
+        llm=llm,
+        context_window=settings.vllm_context_window,
+        temperature=settings.vllm_temperature,
+        max_tokens=settings.vllm_max_tokens,
+    )
