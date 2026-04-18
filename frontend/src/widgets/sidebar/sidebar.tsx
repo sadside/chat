@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Plus, Search, X } from 'lucide-react';
 import { useParams } from '@tanstack/react-router';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +18,7 @@ import { useCreateChat } from '@/features/create-chat';
 import { useRenameChat } from '@/features/rename-chat';
 import { useDeleteChat } from '@/features/delete-chat';
 import { useExportChat } from '@/features/export-chat';
+import { cn } from '@/shared/lib/utils';
 
 export function Sidebar() {
   const { query, setQuery, results, clearQuery, isFiltering } = useSearchChats();
@@ -38,42 +38,60 @@ export function Sidebar() {
   }
 
   return (
-    <nav className="flex h-full flex-col gap-2 px-2 py-3">
+    <nav className="flex h-full flex-col gap-1 px-2 py-3 bg-[--color-sidebar]">
       {/* New chat button */}
       <Button
         onClick={() => createChat.mutate()}
         disabled={createChat.isPending}
-        className="w-full justify-start gap-2"
+        className="w-full justify-between gap-2 rounded-xl px-3 h-10 mb-1"
         variant="outline"
+        aria-label="Создать новый чат"
       >
-        <Plus className="h-4 w-4" />
-        New chat
+        <span className="flex items-center gap-2">
+          <Plus className="h-4 w-4 shrink-0" />
+          <span>Новый чат</span>
+        </span>
+        <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
+          <span>⌘</span><span>K</span>
+        </kbd>
       </Button>
 
       {/* Search box */}
-      <div className="relative">
+      <div className="relative mb-1">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-        <Input
-          className="pl-8 pr-8 h-8 text-sm"
-          placeholder="Search chats…"
+        <input
+          className={cn(
+            'w-full rounded-lg bg-[--color-background]/50 pl-8 pr-8 h-8 text-sm outline-none',
+            'placeholder:text-muted-foreground border-0 ring-0',
+            'focus:ring-1 focus:ring-[--color-ring]/40 transition-shadow'
+          )}
+          placeholder="Поиск по чатам…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          aria-label="Поиск по чатам"
         />
         {isFiltering && (
           <button
             onClick={clearQuery}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            aria-label="Clear search"
+            aria-label="Очистить поиск"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
 
+      {/* Section label */}
+      {results.length > 0 && (
+        <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 select-none">
+          Недавнее
+        </p>
+      )}
+
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto space-y-0.5">
         {results.length === 0 && isFiltering && (
-          <p className="px-3 py-4 text-xs text-muted-foreground text-center">No chats found</p>
+          <p className="px-3 py-4 text-xs text-muted-foreground text-center">Ничего не найдено</p>
         )}
         {results.map((chat) => (
           <ChatListItem
@@ -91,14 +109,13 @@ export function Sidebar() {
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete chat?</AlertDialogTitle>
+            <AlertDialogTitle>Удалить чат?</AlertDialogTitle>
             <AlertDialogDescription>
-              &ldquo;{deleteTarget?.title}&rdquo; will be permanently deleted along with all its
-              messages. This action cannot be undone.
+              &ldquo;{deleteTarget?.title}&rdquo; будет удалён вместе со всей историей. Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
@@ -108,7 +125,7 @@ export function Sidebar() {
                 }
               }}
             >
-              Delete
+              Удалить
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

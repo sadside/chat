@@ -55,8 +55,10 @@ export function ChatListItem({
       transition={{ duration: 0.12 }}
       className={cn(
         'group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm',
-        isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-muted',
-        'cursor-pointer'
+        isActive
+          ? 'bg-[--color-primary]/10 text-foreground border-l-2 border-l-[--color-primary] pl-[10px]'
+          : 'hover:bg-[--color-primary]/5 border-l-2 border-l-transparent',
+        'cursor-pointer transition-colors'
       )}
     >
       {editMode ? (
@@ -72,11 +74,13 @@ export function ChatListItem({
             className="flex-1 bg-transparent outline-none text-sm"
             maxLength={200}
             autoFocus
+            placeholder="Название чата"
+            aria-label="Название чата"
           />
-          <button onClick={commitEdit} aria-label="Confirm rename">
+          <button onClick={commitEdit} aria-label="Подтвердить переименование">
             <Check className="h-3.5 w-3.5 text-green-500" />
           </button>
-          <button onClick={cancelEdit} aria-label="Cancel rename">
+          <button onClick={cancelEdit} aria-label="Отменить переименование">
             <X className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         </div>
@@ -93,10 +97,12 @@ export function ChatListItem({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5
-                           hover:bg-background/80"
+                className={cn(
+                  'transition-opacity rounded p-0.5 hover:bg-background/80',
+                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                )}
                 onClick={(e) => e.preventDefault()}
-                aria-label="Chat options"
+                aria-label="Параметры чата"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
@@ -104,11 +110,11 @@ export function ChatListItem({
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={startEdit}>
                 <Pencil className="mr-2 h-3.5 w-3.5" />
-                Rename
+                Переименовать
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onExport(chat.id, chat.title)}>
                 <Download className="mr-2 h-3.5 w-3.5" />
-                Export
+                Экспорт
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -116,7 +122,7 @@ export function ChatListItem({
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Delete
+                Удалить
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

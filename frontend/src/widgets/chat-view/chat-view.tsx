@@ -14,9 +14,9 @@ interface ChatViewProps {
 
 function formatDividerDate(dateStr: string): string {
   const d = new Date(dateStr);
-  if (isToday(d)) return 'Today';
-  if (isYesterday(d)) return 'Yesterday';
-  return format(d, 'MMMM d, yyyy');
+  if (isToday(d)) return 'Сегодня';
+  if (isYesterday(d)) return 'Вчера';
+  return format(d, 'd MMMM yyyy');
 }
 
 export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewProps) {
@@ -90,7 +90,7 @@ export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewPr
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-3xl px-4 py-6 flex flex-col gap-4">
+      <div className="mx-auto max-w-3xl px-4 py-6 flex flex-col gap-8">
         {displayMessages.map((item, idx) => {
           if (item === '__divider__') {
             // Find the next message to get its date
@@ -124,7 +124,7 @@ export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewPr
         })}
 
         {stream.status === 'error' && stream.error && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div className="rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {stream.error}
           </div>
         )}

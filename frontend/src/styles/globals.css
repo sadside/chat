@@ -15,11 +15,12 @@
   --color-brand-900: oklch(0.27 0.10 264);
 
   /* Semantic tokens — light mode defaults */
-  --color-background: oklch(0.99 0 0);
+  --color-background: oklch(0.99 0.005 85);
   --color-foreground: oklch(0.13 0.02 264);
-  --color-card: oklch(0.97 0 0);
+  --color-sidebar: oklch(0.96 0.005 85);
+  --color-card: oklch(0.97 0.005 85);
   --color-card-foreground: oklch(0.13 0.02 264);
-  --color-popover: oklch(0.99 0 0);
+  --color-popover: oklch(0.97 0.005 85);
   --color-popover-foreground: oklch(0.13 0.02 264);
   --color-primary: oklch(0.50 0.22 270);
   --color-primary-foreground: oklch(0.99 0 0);
@@ -33,11 +34,12 @@
   --color-destructive: oklch(0.54 0.22 27);
   --color-destructive-foreground: oklch(0.99 0 0);
   --color-border: oklch(0.89 0.01 264);
+  --color-border-soft: oklch(0.92 0.008 264);
   --color-input: oklch(0.89 0.01 264);
   --color-ring: oklch(0.56 0.21 270);
 
   /* Radius */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -46,11 +48,12 @@
 
 /* Dark mode overrides — applied when <html class="dark"> */
 .dark {
-  --color-background: oklch(0.13 0.02 264);
+  --color-background: oklch(0.145 0.015 264);
   --color-foreground: oklch(0.97 0.01 264);
+  --color-sidebar: oklch(0.11 0.02 264);
   --color-card: oklch(0.17 0.02 264);
   --color-card-foreground: oklch(0.97 0.01 264);
-  --color-popover: oklch(0.15 0.02 264);
+  --color-popover: oklch(0.18 0.02 264);
   --color-popover-foreground: oklch(0.97 0.01 264);
   --color-primary: oklch(0.68 0.17 270);
   --color-primary-foreground: oklch(0.13 0.02 264);
@@ -64,6 +67,7 @@
   --color-destructive: oklch(0.60 0.20 27);
   --color-destructive-foreground: oklch(0.97 0 0);
   --color-border: oklch(0.25 0.03 264);
+  --color-border-soft: oklch(0.20 0.025 264);
   --color-input: oklch(0.25 0.03 264);
   --color-ring: oklch(0.68 0.17 270);
 }

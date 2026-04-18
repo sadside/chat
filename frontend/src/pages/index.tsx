@@ -60,7 +60,7 @@ function HomePage() {
         <Composer
           onSend={handleSend}
           disabled={creating || stream.status === 'streaming'}
-          placeholder="Start a new conversation…"
+          placeholder="Начните новый разговор…"
         />
       </div>
     </div>

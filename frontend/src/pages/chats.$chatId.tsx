@@ -75,7 +75,7 @@ function ChatPage() {
         />
         {status === 'error' && (
           <p className="mt-1 text-xs text-destructive text-center">
-            Failed to send message. Please try again.
+            Не удалось отправить сообщение. Попробуйте ещё раз.
           </p>
         )}
       </div>

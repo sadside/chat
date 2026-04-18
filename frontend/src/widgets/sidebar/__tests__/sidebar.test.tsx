@@ -46,7 +46,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 describe('Sidebar', () => {
   it('renders New chat button', () => {
     render(<Wrapper><Sidebar /></Wrapper>);
-    expect(screen.getByText('New chat')).toBeInTheDocument();
+    expect(screen.getByText('Новый чат')).toBeInTheDocument();
   });
 
   it('renders chat list item', () => {
@@ -56,6 +56,6 @@ describe('Sidebar', () => {
 
   it('renders search input', () => {
     render(<Wrapper><Sidebar /></Wrapper>);
-    expect(screen.getByPlaceholderText('Search chats…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Поиск по чатам…')).toBeInTheDocument();
   });
 });

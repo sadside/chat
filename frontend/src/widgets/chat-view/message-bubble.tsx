@@ -27,55 +27,74 @@ export function MessageBubble({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.15 }}
       className={cn(
-        'group flex flex-col gap-1',
-        isUser ? 'items-end' : 'items-start'
+        'group flex gap-3',
+        isUser ? 'flex-row-reverse' : 'flex-row'
       )}
     >
-      <div
-        className={cn(
-          'relative max-w-[min(85%,680px)] rounded-2xl px-4 py-2.5 text-sm',
-          isUser
-            ? 'bg-primary text-primary-foreground rounded-br-sm'
-            : 'bg-muted text-foreground rounded-bl-sm',
-          message.aborted && !isUser && 'opacity-70'
-        )}
-      >
-        {isUser ? (
-          <p className="whitespace-pre-wrap break-words">{message.content}</p>
-        ) : (
-          <MarkdownContent content={message.content} streaming={streaming} />
-        )}
-
-        {message.aborted && !isUser && (
-          <span className="mt-1 block text-xs text-muted-foreground">
-            — Stopped
-          </span>
-        )}
+      {/* Avatar */}
+      <div className={cn(
+        'shrink-0 mt-0.5 h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold select-none',
+        isUser
+          ? 'bg-[--color-secondary] text-[--color-secondary-foreground]'
+          : 'bg-gradient-to-br from-[--color-primary] to-[--color-accent-alt] text-white'
+      )}>
+        {isUser ? 'Я' : '⊙'}
       </div>
 
-      {/* Action row */}
-      <div className="flex items-center gap-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={() => copy(message.content)}
-          className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Copy message"
-        >
-          {copied ? (
-            <Check className="h-3.5 w-3.5 text-green-500" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
+      <div className={cn('flex flex-col gap-1', isUser ? 'items-end' : 'items-start', 'min-w-0 flex-1')}>
+        <div
+          className={cn(
+            'relative text-sm',
+            isUser
+              ? [
+                  'rounded-2xl rounded-tr-sm px-4 py-2.5',
+                  'bg-[color-mix(in_oklch,var(--color-primary)_15%,transparent)]',
+                  'border border-[--color-primary]/20',
+                  'max-w-[min(68ch,85%)]',
+                ].join(' ')
+              : [
+                  'text-foreground max-w-full',
+                ].join(' '),
+            message.aborted && !isUser && 'opacity-70'
           )}
-        </button>
+        >
+          {isUser ? (
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          ) : (
+            <MarkdownContent content={message.content} streaming={streaming} />
+          )}
 
-        {showRegenerateButton && !isUser && onRegenerate && (
+          {message.aborted && !isUser && (
+            <span className="mt-1 block text-xs text-muted-foreground">
+              — Остановлено
+            </span>
+          )}
+        </div>
+
+        {/* Action row */}
+        <div className="flex items-center gap-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={onRegenerate}
+            onClick={() => copy(message.content)}
             className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Regenerate response"
+            aria-label="Копировать сообщение"
           >
-            <RefreshCw className="h-3.5 w-3.5" />
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
           </button>
-        )}
+
+          {showRegenerateButton && !isUser && onRegenerate && (
+            <button
+              onClick={onRegenerate}
+              className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Сгенерировать снова"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );

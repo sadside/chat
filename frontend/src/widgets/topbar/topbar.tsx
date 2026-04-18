@@ -23,27 +23,27 @@ export function Topbar() {
   }
 
   return (
-    <header className="flex h-14 items-center border-b border-[--color-border] bg-[--color-background] px-4">
+    <header className="flex h-12 items-center bg-[--color-background] px-4 shadow-sm">
       {isMobile && (
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          aria-label="Open navigation"
+          aria-label="Открыть меню навигации"
           className="mr-2"
         >
           <Menu className="h-4 w-4" />
         </Button>
       )}
 
-      <div className="flex items-center gap-2">
-        {/* Brand mark / current chat title */}
-        <span className="text-lg font-semibold tracking-tight text-[--color-foreground]">
+      <div className="flex items-center gap-2 flex-1 justify-center">
+        {/* Current chat title or brand */}
+        <span className="text-sm font-medium tracking-tight text-[--color-foreground] truncate max-w-[60vw]">
           {title}
         </span>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <ThemeToggle />
         <UserMenu />
       </div>

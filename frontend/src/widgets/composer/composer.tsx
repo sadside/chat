@@ -20,7 +20,7 @@ export function Composer({
   onStop,
   isStreaming = false,
   disabled = false,
-  placeholder = 'Message Nova…',
+  placeholder = 'Спросите Nova…',
 }: ComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = React.useState('');
@@ -57,8 +57,8 @@ export function Composer({
   return (
     <div
       className={cn(
-        'flex flex-col gap-1 rounded-2xl border bg-background px-4 py-3 shadow-sm',
-        'focus-within:ring-2 focus-within:ring-ring',
+        'flex flex-col gap-1 rounded-2xl border bg-[--color-card] px-4 py-3 shadow-sm',
+        'focus-within:ring-2 focus-within:ring-ring/60',
         disabled && 'opacity-50'
       )}
     >
@@ -75,14 +75,14 @@ export function Composer({
         disabled={disabled || isStreaming}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        aria-label="Message input"
+        aria-label="Поле ввода сообщения"
         maxLength={MAX_LENGTH + 200} // allow slight over to show warning
       />
 
       <div className="flex items-center justify-between">
         {tooLong && (
           <span className="text-xs text-destructive">
-            {value.length}/{MAX_LENGTH} — message too long
+            {value.length}/{MAX_LENGTH} — сообщение слишком длинное
           </span>
         )}
         <span className="flex-1" />
@@ -91,19 +91,19 @@ export function Composer({
           <Button
             size="icon"
             variant="destructive"
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-full transition-transform active:scale-95"
             onClick={onStop}
-            aria-label="Stop generation"
+            aria-label="Остановить генерацию"
           >
             <Square className="h-4 w-4 fill-current" />
           </Button>
         ) : (
           <Button
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 rounded-full transition-transform active:scale-95"
             disabled={!value.trim() || disabled || tooLong}
             onClick={handleSend}
-            aria-label="Send message"
+            aria-label="Отправить сообщение"
           >
             <Send className="h-4 w-4" />
           </Button>
