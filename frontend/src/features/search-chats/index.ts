@@ -1,0 +1,1 @@
+export { useSearchChats } from './model';
