@@ -3,11 +3,43 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import AsyncIterator
 
 import httpx
 
 from app.core.exceptions import LlmUnavailableError
+
+# Unicode ranges to scrub from model output — Nova is a Russian-only product,
+# and some local models (notably the qwen family) slip into Chinese mid-reply
+# regardless of the system prompt. Stripping CJK characters at the streaming
+# layer guarantees the user never sees hieroglyphs.
+_CJK_RE = re.compile(
+    "["
+    "\u4e00-\u9fff"  # CJK Unified Ideographs
+    "\u3400-\u4dbf"  # CJK Unified Ideographs Extension A
+    "\uf900-\ufaff"  # CJK Compatibility Ideographs
+    "\u3040-\u309f"  # Hiragana
+    "\u30a0-\u30ff"  # Katakana
+    "\uff66-\uff9f"  # Half-width Katakana
+    "\uac00-\ud7af"  # Hangul Syllables
+    "\u3000-\u303f"  # CJK Symbols and Punctuation (full-width parens etc.)
+    "\uff00-\uff5f"  # Full-width Latin / punctuation
+    "]+"
+)
+
+
+def _strip_cjk(text: str) -> str:
+    """Remove CJK characters and collapse the whitespace they leave behind."""
+    if not text:
+        return text
+    # Fast path: no CJK at all → return as-is.
+    if not _CJK_RE.search(text):
+        return text
+    out = _CJK_RE.sub("", text)
+    # Tidy up double spaces the removal may leave.
+    out = re.sub(r"[ \t]{2,}", " ", out)
+    return out
 
 
 class LlmClient:
@@ -58,7 +90,9 @@ class LlmClient:
                         chunk = json.loads(raw)
                         delta = chunk["choices"][0]["delta"].get("content")
                         if delta:
-                            yield delta
+                            cleaned = _strip_cjk(delta)
+                            if cleaned:
+                                yield cleaned
                     except (KeyError, IndexError, json.JSONDecodeError):
                         continue
         except LlmUnavailableError:
@@ -87,7 +121,7 @@ class LlmClient:
                 raise LlmUnavailableError(f"vLLM returned {response.status_code}")
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            return _strip_cjk(data["choices"][0]["message"]["content"])
         except LlmUnavailableError:
             raise
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
