@@ -11,6 +11,7 @@ import { Topbar } from '@/widgets/topbar/topbar';
 import { useUiStore } from '@/shared/store/ui-store';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { ErrorBoundary } from '@/app/error-boundary';
+import { Toaster } from '@/shared/ui/sonner';
 
 function RootLayout() {
   const { sidebarOpen, closeSidebar } = useUiStore();
@@ -50,6 +51,7 @@ function RootLayout() {
         </div>
       </div>
     </ErrorBoundary>
+    <Toaster />
   );
 }
 
