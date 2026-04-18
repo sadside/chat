@@ -33,9 +33,14 @@ function ChatPage() {
   // When we arrived here from the Home submit handler, a stream for this
   // chat was already started before navigation. We no longer need a
   // pending-message handshake.
-  const streamForThisChat =
-    useStreamStore((s) => s.chatId) === chatId &&
-    useStreamStore((s) => s.status) !== 'idle';
+  //
+  // NB: call both selectors UNCONDITIONALLY (no short-circuit) to keep the
+  // hook count stable across renders — a `&&` between two hook calls would
+  // skip the second one when the first is falsy and crash React with
+  // "Rendered fewer hooks than expected".
+  const storeChatId = useStreamStore((s) => s.chatId);
+  const storeStatus = useStreamStore((s) => s.status);
+  const streamForThisChat = storeChatId === chatId && storeStatus !== 'idle';
 
   if (isLoading && !streamForThisChat) {
     return (

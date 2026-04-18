@@ -81,11 +81,22 @@ async def export_chat(
     current_user: User = Depends(get_current_user),  # noqa: B008
     svc: ChatService = Depends(get_chat_service),  # noqa: B008
 ) -> PlainTextResponse:
+    from urllib.parse import quote
+
     md = await svc.export_markdown(chat_id, current_user.id)
     chat = await svc.get_chat_or_404(chat_id, current_user.id)
     safe_title = chat.title.replace("/", "_").replace("\\", "_")
+    # Header values must be latin-1. For non-ASCII titles (Cyrillic, emoji, etc.)
+    # we use RFC 5987 `filename*=UTF-8''...` and fall back to a sanitised
+    # ASCII `filename=` for older clients.
+    ascii_fallback = safe_title.encode("ascii", "ignore").decode("ascii") or "chat"
+    utf8_value = quote(f"{safe_title}.md", safe="")
+    disposition = (
+        f'attachment; filename="{ascii_fallback}.md"; '
+        f"filename*=UTF-8''{utf8_value}"
+    )
     return PlainTextResponse(
         content=md,
         media_type="text/markdown",
-        headers={"Content-Disposition": f'attachment; filename="{safe_title}.md"'},
+        headers={"Content-Disposition": disposition},
     )

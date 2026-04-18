@@ -18,7 +18,7 @@ async def test_create_chat(auth_client: AsyncClient) -> None:
     resp = await auth_client.post("/api/v1/chats")
     assert resp.status_code == 201
     data = resp.json()
-    assert data["title"] == "New chat"
+    assert data["title"] == "Новый чат"
     assert "id" in data
     assert "created_at" in data
 
@@ -95,4 +95,4 @@ async def test_export_empty_chat(auth_client: AsyncClient) -> None:
     chat_id = (await auth_client.post("/api/v1/chats")).json()["id"]
     resp = await auth_client.get(f"/api/v1/chats/{chat_id}/export")
     assert resp.status_code == 200
-    assert "New chat" in resp.text
+    assert "Новый чат" in resp.text

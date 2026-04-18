@@ -21,40 +21,32 @@ export function MessageBubble({
   const { copy, copied } = useCopyToClipboard();
 
   return (
-    // Mount-only fade-in via Tailwind (animate-in runs exactly once when the
-    // element enters the DOM; subsequent re-renders during streaming deltas
-    // do NOT replay it).
+    // Mount-only fade-in via Tailwind. `animate-in` fires exactly once when
+    // the element enters the DOM and does not replay during streaming deltas.
     <div
       className={cn(
-        'group flex gap-3',
+        'group flex w-full',
         'animate-in fade-in-0 slide-in-from-bottom-1 duration-150 ease-out',
-        isUser ? 'flex-row-reverse' : 'flex-row'
+        isUser ? 'justify-end' : 'justify-start'
       )}
     >
-      {/* Avatar */}
-      <div className={cn(
-        'shrink-0 mt-0.5 h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold select-none',
-        isUser
-          ? 'bg-[--color-secondary] text-[--color-secondary-foreground]'
-          : 'bg-gradient-to-br from-[--color-primary] to-[--color-accent-alt] text-white'
-      )}>
-        {isUser ? 'Я' : '⊙'}
-      </div>
-
-      <div className={cn('flex flex-col gap-1', isUser ? 'items-end' : 'items-start', 'min-w-0 flex-1')}>
+      <div
+        className={cn(
+          'flex flex-col gap-1 min-w-0',
+          isUser ? 'items-end max-w-[min(68ch,85%)]' : 'items-start max-w-full flex-1'
+        )}
+      >
         <div
           className={cn(
-            'relative text-sm',
+            'relative text-[15px] leading-relaxed',
             isUser
               ? [
-                  'rounded-2xl rounded-tr-sm px-4 py-2.5',
-                  'bg-[color-mix(in_oklch,var(--color-primary)_15%,transparent)]',
-                  'border border-[--color-primary]/20',
-                  'max-w-[min(68ch,85%)]',
+                  'rounded-2xl rounded-tr-md px-4 py-2.5',
+                  'bg-[color-mix(in_oklch,var(--color-primary)_14%,transparent)]',
+                  'border border-[--color-primary]/15',
+                  'text-foreground',
                 ].join(' ')
-              : [
-                  'text-foreground max-w-full',
-                ].join(' '),
+              : 'text-foreground w-full',
             message.aborted && !isUser && 'opacity-70'
           )}
         >
