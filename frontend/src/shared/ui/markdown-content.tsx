@@ -17,12 +17,39 @@ interface MarkdownContentProps {
 }
 
 /**
- * A pretty, dark, rounded code block with a copy button.
+ * Normalise LaTeX delimiters that local models often emit in the wrong form.
  *
- * rehype-highlight wraps code in `<pre><code class="hljs language-xxx">...</code></pre>`.
- * We replace `<pre>` entirely so we control padding, rounding, scrollbar,
- * and the hover copy button. Syntax tokens are coloured via `github-dark.css`.
+ * remark-math only recognises `$x$` (inline) and `$$x$$` (block). Many models
+ * produce `\(x\)`, `\[x\]`, and even bare `[ x ]` / `( x )` around LaTeX —
+ * we fix them up before handing the text to markdown parsing.
  */
+function normaliseLatex(src: string): string {
+  let out = src;
+
+  // \[ ... \]  →  $$ ... $$   (block)
+  out = out.replace(/\\\[([\s\S]+?)\\\]/g, (_m, body) => `\n$$${body}$$\n`);
+
+  // \( ... \)  →  $ ... $     (inline)
+  out = out.replace(/\\\(([\s\S]+?)\\\)/g, (_m, body) => `$${body}$`);
+
+  // Bare block formula:  `[ \something ... ]` on its own line (or preceded by
+  // a newline) — matches the "[ Z_n = \frac{...} ]" pattern local models emit.
+  out = out.replace(
+    /(^|\n)\s*\[\s*((?:\\[a-zA-Z]+|[^\]\n]){1,})\s*\]\s*(?=\n|$)/g,
+    (_m, lead, body) => `${lead}\n$$${body.trim()}$$\n`,
+  );
+
+  // Bare inline formula:  `( \something ... )` — only when body contains a
+  // backslash command or `_` / `^` subscripts so we don't eat regular
+  // parentheses in prose.
+  out = out.replace(
+    /\(\s*((?:\\[a-zA-Z]+[^()]*|[A-Za-z0-9]+_[A-Za-z0-9]+|[A-Za-z0-9]+\^[A-Za-z0-9]+)[^()]*)\s*\)/g,
+    (_m, body) => `$${body.trim()}$`,
+  );
+
+  return out;
+}
+
 function PreBlock({
   children,
   className,
@@ -84,30 +111,50 @@ function PreBlock({
 }
 
 export function MarkdownContent({ content, streaming }: MarkdownContentProps) {
+  const normalised = React.useMemo(() => normaliseLatex(content), [content]);
+
   return (
     <div
       className={cn(
-        'prose prose-neutral dark:prose-invert max-w-none',
-        // Typography polish — keep line-height comfortable, tame base size,
-        // tighter spacing between block elements (less flab than prose default).
+        // Explicit colour + typography utilities — we deliberately don't use
+        // Tailwind's `prose`, because it overrides text colour via its own
+        // `--tw-prose-*` tokens that are independent of our OKLCH theme and
+        // rendered near-invisible on the light beige background.
+        'text-[15px] leading-relaxed text-[--color-foreground]',
         '[&>*:first-child]:mt-0 [&>*:last-child]:mb-0',
-        'prose-p:my-3 prose-p:leading-7',
-        'prose-headings:font-semibold prose-headings:tracking-tight',
-        'prose-h1:mt-6 prose-h1:mb-3 prose-h1:text-2xl',
-        'prose-h2:mt-5 prose-h2:mb-2 prose-h2:text-xl',
-        'prose-h3:mt-4 prose-h3:mb-2 prose-h3:text-lg',
-        'prose-ul:my-3 prose-ol:my-3 prose-li:my-1',
-        'prose-blockquote:border-l-[--color-primary] prose-blockquote:border-l-2',
-        'prose-blockquote:bg-[--color-muted]/40 prose-blockquote:rounded-r-md',
-        'prose-blockquote:px-4 prose-blockquote:py-1 prose-blockquote:not-italic',
-        'prose-strong:text-foreground',
-        'prose-code:before:hidden prose-code:after:hidden',
-        'prose-code:rounded prose-code:bg-[--color-muted] prose-code:px-1.5 prose-code:py-0.5',
-        'prose-code:text-[0.9em] prose-code:font-medium prose-code:text-foreground',
-        'prose-pre:!bg-transparent prose-pre:!p-0 prose-pre:!my-0',
-        'prose-a:text-[--color-primary] prose-a:no-underline hover:prose-a:underline',
-        'prose-hr:my-6 prose-hr:border-[--color-border]',
-        'prose-table:my-4',
+        // Paragraphs + inline runs
+        '[&_p]:my-3 [&_p]:leading-7 [&_p]:text-[--color-foreground]',
+        // Headings
+        '[&_h1]:mt-6 [&_h1]:mb-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-tight [&_h1]:text-[--color-foreground]',
+        '[&_h2]:mt-5 [&_h2]:mb-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-[--color-foreground]',
+        '[&_h3]:mt-4 [&_h3]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:tracking-tight [&_h3]:text-[--color-foreground]',
+        '[&_h4]:mt-3 [&_h4]:mb-1.5 [&_h4]:text-base [&_h4]:font-semibold [&_h4]:text-[--color-foreground]',
+        // Lists
+        '[&_ul]:my-3 [&_ul]:ml-6 [&_ul]:list-disc [&_ul]:marker:text-[--color-muted-foreground]',
+        '[&_ol]:my-3 [&_ol]:ml-6 [&_ol]:list-decimal [&_ol]:marker:text-[--color-muted-foreground]',
+        '[&_li]:my-1 [&_li>p]:my-0',
+        // Emphasis
+        '[&_strong]:font-semibold [&_strong]:text-[--color-foreground]',
+        '[&_em]:italic',
+        // Inline code
+        '[&_code]:rounded [&_code]:bg-[--color-muted] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.88em] [&_code]:font-medium [&_code]:text-[--color-foreground]',
+        // Fenced code — PreBlock renders its own container, so reset defaults
+        '[&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:my-0',
+        '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit [&_pre_code]:text-sm',
+        // Links
+        '[&_a]:text-[--color-primary] [&_a]:no-underline hover:[&_a]:underline',
+        // Blockquote
+        '[&_blockquote]:my-4 [&_blockquote]:border-l-2 [&_blockquote]:border-l-[--color-primary]',
+        '[&_blockquote]:bg-[--color-muted]/40 [&_blockquote]:rounded-r-md',
+        '[&_blockquote]:px-4 [&_blockquote]:py-1 [&_blockquote]:text-[--color-muted-foreground]',
+        // HR
+        '[&_hr]:my-6 [&_hr]:border-[--color-border]',
+        // Tables
+        '[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:text-sm',
+        '[&_th]:border [&_th]:border-[--color-border] [&_th]:bg-[--color-muted] [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-semibold',
+        '[&_td]:border [&_td]:border-[--color-border] [&_td]:px-3 [&_td]:py-1.5',
+        // KaTeX display blocks — a touch of vertical breathing room
+        '[&_.katex-display]:my-4 [&_.katex-display]:overflow-x-auto',
       )}
     >
       <ReactMarkdown
@@ -120,7 +167,7 @@ export function MarkdownContent({ content, streaming }: MarkdownContentProps) {
           pre: ({ children, ...props }) => <PreBlock {...props}>{children}</PreBlock>,
         }}
       >
-        {content}
+        {normalised}
       </ReactMarkdown>
       {streaming && (
         <span
