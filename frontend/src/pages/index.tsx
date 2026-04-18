@@ -1,21 +1,15 @@
+import { useState, useCallback } from 'react';
+import { useRouter } from '@tanstack/react-router';
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { apiClient as api } from '@/shared/api/client';
+import { chatKeys } from '@/entities/chat/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { Composer } from '@/widgets/composer';
+import { EmptyState } from '@/widgets/chat-view';
+import { useStreamStore } from '@/shared/store/stream-store';
 import { queryClient } from '@/app/providers/query-provider';
 import { meQueryOptions } from '@/entities/user/api';
-
-function WelcomePage() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-[--color-foreground]">
-          Nova is ready
-        </h1>
-        <p className="text-sm text-[--color-muted-foreground]">
-          Your AI assistant is standing by. Start a new chat to begin.
-        </p>
-      </div>
-    </div>
-  );
-}
+import type { Chat } from '@/entities/chat/types';
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
@@ -28,5 +22,47 @@ export const Route = createFileRoute('/')({
       throw redirect({ to: '/auth' });
     }
   },
-  component: WelcomePage,
+  component: HomePage,
 });
+
+function HomePage() {
+  const router = useRouter();
+  const qc = useQueryClient();
+  const [creating, setCreating] = useState(false);
+  const stream = useStreamStore();
+
+  const handleSend = useCallback(
+    async (content: string) => {
+      setCreating(true);
+      try {
+        const chat = await api.post('chats').json<Chat>();
+        qc.invalidateQueries({ queryKey: chatKeys.list() });
+        // Navigate first, then the chat page will trigger the send
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (router.navigate as any)({
+          to: '/chats/$chatId',
+          params: { chatId: chat.id },
+          state: { pendingMessage: content },
+        });
+      } finally {
+        setCreating(false);
+      }
+    },
+    [router, qc]
+  );
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <EmptyState onPromptClick={(p) => handleSend(p)} />
+      </div>
+      <div className="mx-auto w-full max-w-3xl px-4 pb-4">
+        <Composer
+          onSend={handleSend}
+          disabled={creating || stream.status === 'streaming'}
+          placeholder="Start a new conversation…"
+        />
+      </div>
+    </div>
+  );
+}
