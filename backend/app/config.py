@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     smtp_from: str
     smtp_tls: bool = False
 
+    # vLLM
+    vllm_url: str = "http://localhost:8000/v1"
+    vllm_model: str = "bond005/meno-lite-0.1"
+    vllm_timeout_seconds: float = 120.0
+    vllm_context_window: int = 8192
+    vllm_temperature: float = 0.7
+    vllm_max_tokens: int = 1024
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def app_cors_origins(self) -> list[str]:
