@@ -16,7 +16,7 @@ export const apiClient = ky.create({
         const { response } = error;
         if (response) {
           try {
-            const body = await response.clone().json<{ detail?: string }>();
+            const body = (await response.clone().json()) as { detail?: string };
             if (body.detail) {
               error.message = body.detail;
             }
