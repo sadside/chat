@@ -22,7 +22,7 @@ class ChatService:
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
 
-    async def create_chat(self, user_id: UUID, title: str = "New chat") -> Chat:
+    async def create_chat(self, user_id: UUID, title: str = "Новый чат") -> Chat:
         chat = Chat(user_id=user_id, title=title)
         self._db.add(chat)
         await self._db.flush()

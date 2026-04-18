@@ -34,6 +34,16 @@ async def create_chat(
     return ChatSummary.model_validate(chat)
 
 
+@router.get("/{chat_id}", response_model=ChatSummary)
+async def get_chat(
+    chat_id: UUID,
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    svc: ChatService = Depends(get_chat_service),  # noqa: B008
+) -> ChatSummary:
+    chat = await svc.get_chat_or_404(chat_id, current_user.id)
+    return ChatSummary.model_validate(chat)
+
+
 @router.patch("/{chat_id}", response_model=ChatSummary)
 async def rename_chat(
     chat_id: UUID,

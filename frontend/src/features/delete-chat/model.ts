@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter, useParams } from '@tanstack/react-router';
+import { useRouter, useRouterState } from '@tanstack/react-router';
 import { apiClient as api } from '@/shared/api/client';
 import { chatKeys } from '@/entities/chat/queries';
 
@@ -7,15 +7,10 @@ export function useDeleteChat() {
   const qc = useQueryClient();
   const router = useRouter();
 
-  // Try to read the current chatId param; may not exist on home page.
-  let currentChatId: string | undefined;
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const params = useParams({ from: '/chats/$chatId' });
-    currentChatId = params.chatId;
-  } catch {
-    currentChatId = undefined;
-  }
+  // Derive current chat id from pathname without conditional hooks.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const match = pathname.match(/^\/chats\/([^/]+)/);
+  const currentChatId = match ? match[1] : undefined;
 
   return useMutation({
     mutationFn: (id: string) => api.delete(`chats/${id}`),

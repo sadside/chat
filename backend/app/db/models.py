@@ -54,7 +54,7 @@ class Chat(UuidPkMixin, TimestampsMixin, Base):
         nullable=False,
         index=True,
     )
-    title: Mapped[str] = mapped_column(String(200), nullable=False, default="New chat")
+    title: Mapped[str] = mapped_column(String(200), nullable=False, default="Новый чат")
 
     user: Mapped[User] = relationship(back_populates="chats")
     messages: Mapped[list[Message]] = relationship(
