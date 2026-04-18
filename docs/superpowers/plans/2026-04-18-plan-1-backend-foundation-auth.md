@@ -6,7 +6,7 @@
 
 **Architecture:** FastAPI (async) + SQLAlchemy 2.0 + asyncpg + Alembic + Pydantic v2. Инфраструктура (PostgreSQL + Mailpit) поднимается через docker-compose. JWT-токен в httpOnly cookie (HS256). OTP — 6 цифр, sha256-хеш с pepper, TTL 10 минут, rate-limit 3 запроса/15мин на email. Email абстрагирован через `EmailSender` Protocol с реализациями `SMTPSender` и `ConsoleSender`.
 
-**Tech Stack:** Python 3.12 · FastAPI · uvicorn · SQLAlchemy 2.0 async · asyncpg · Alembic · Pydantic v2 · pydantic-settings · python-jose · passlib-less (не нужен — OTP, не пароли) · aiosmtplib · slowapi · structlog · pytest · pytest-asyncio · httpx · uv (deps manager) · Docker Compose · PostgreSQL 16 · Mailpit.
+**Tech Stack:** Python 3.12 · FastAPI · uvicorn · SQLAlchemy 2.0 async · asyncpg · Alembic · Pydantic v2 · pydantic-settings · PyJWT · passlib-less (не нужен — OTP, не пароли) · aiosmtplib · slowapi · structlog · pytest · pytest-asyncio · httpx · uv (deps manager) · Docker Compose · PostgreSQL 16 · Mailpit.
 
 **Repo layout (итоговый после плана):**
 ```
@@ -151,9 +151,9 @@ dependencies = [
     "alembic>=1.14",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
-    "python-jose[cryptography]>=3.3",
+    "pyjwt[crypto]>=2.10",
     "httpx[http2]>=0.28",
-    "aiosmtplib>=3.0",
+    "aiosmtplib>=5.0",
     "slowapi>=0.1.9",
     "structlog>=24.4",
     "python-multipart>=0.0.12",
@@ -164,7 +164,6 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pytest-cov>=6.0",
-    "httpx>=0.28",
     "aiosqlite>=0.20",
     "ruff>=0.8",
 ]
@@ -181,6 +180,10 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "SIM", "RUF"]
 ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 ```
 
 - [ ] **Step 1.3: Создать `backend/.python-version`**
@@ -1806,7 +1809,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 
 from app.core.exceptions import UnauthorizedError
 
@@ -1835,7 +1839,7 @@ def decode_access_token(
 ) -> dict[str, Any]:
     try:
         return jwt.decode(token, secret, algorithms=[algorithm])
-    except JWTError as exc:
+    except InvalidTokenError as exc:
         raise UnauthorizedError("Invalid or expired token") from exc
 
 
