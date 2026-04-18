@@ -13,11 +13,13 @@ from app.deps import extract_user_id_from_request
 
 def _make_settings():
     import os
+
     os.environ["DATABASE_URL"] = "postgresql+asyncpg://x:x@h/x"
     os.environ["JWT_SECRET"] = "x" * 32
     os.environ["OTP_PEPPER"] = "p"
     os.environ["SMTP_FROM"] = "x@x"
     from app.config import get_settings
+
     get_settings.cache_clear()
     return get_settings()
 

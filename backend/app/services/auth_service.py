@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,7 +52,7 @@ class AuthService:
         record = OtpCode(
             email=email,
             code_hash=hash_code(code, pepper=self._pepper),
-            expires_at=datetime.now(tz=timezone.utc) + self._ttl,
+            expires_at=datetime.now(tz=UTC) + self._ttl,
         )
         self._session.add(record)
         await self._session.flush()
@@ -60,10 +60,14 @@ class AuthService:
         await self._sender.send_otp(to=email, code=code)
 
     async def _check_rate_limit(self, email: str) -> None:
-        since = datetime.now(tz=timezone.utc) - self._request_window
-        stmt = select(func.count()).select_from(OtpCode).where(
-            OtpCode.email == email,
-            OtpCode.created_at >= since,
+        since = datetime.now(tz=UTC) - self._request_window
+        stmt = (
+            select(func.count())
+            .select_from(OtpCode)
+            .where(
+                OtpCode.email == email,
+                OtpCode.created_at >= since,
+            )
         )
         count = (await self._session.execute(stmt)).scalar_one()
         if count >= self._request_limit:
@@ -79,7 +83,7 @@ class AuthService:
         if otp.attempts >= self._max_attempts:
             raise BadRequestError("Too many attempts. Request a new code.")
 
-        if datetime.now(tz=timezone.utc) >= otp.expires_at:
+        if datetime.now(tz=UTC) >= otp.expires_at:
             raise BadRequestError("OTP expired. Request a new code.")
 
         if not verify_code(code, otp.code_hash, pepper=self._pepper):
@@ -87,7 +91,7 @@ class AuthService:
             await self._session.flush()
             raise BadRequestError("Invalid code")
 
-        otp.consumed_at = datetime.now(tz=timezone.utc)
+        otp.consumed_at = datetime.now(tz=UTC)
         await self._session.flush()
 
         user = await self._get_or_create_user(email)

@@ -27,9 +27,7 @@ async def test_request_otp_invalid_email_422(async_client: AsyncClient):
 async def test_verify_otp_sets_cookie_and_returns_user(
     async_client: AsyncClient, patch_email_sender
 ):
-    await async_client.post(
-        "/api/v1/auth/request-otp", json={"email": "login@x.com"}
-    )
+    await async_client.post("/api/v1/auth/request-otp", json={"email": "login@x.com"})
     code = patch_email_sender.send_otp.await_args.kwargs["code"]
 
     resp = await async_client.post(
@@ -44,9 +42,7 @@ async def test_verify_otp_sets_cookie_and_returns_user(
 
 @pytest.mark.asyncio
 async def test_verify_otp_wrong_code_400(async_client: AsyncClient, patch_email_sender):
-    await async_client.post(
-        "/api/v1/auth/request-otp", json={"email": "x@x.com"}
-    )
+    await async_client.post("/api/v1/auth/request-otp", json={"email": "x@x.com"})
     resp = await async_client.post(
         "/api/v1/auth/verify-otp",
         json={"email": "x@x.com", "code": "000000"},
@@ -61,14 +57,10 @@ async def test_me_requires_auth(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_me_returns_user_when_authenticated(
-    async_client: AsyncClient, patch_email_sender
-):
+async def test_me_returns_user_when_authenticated(async_client: AsyncClient, patch_email_sender):
     await async_client.post("/api/v1/auth/request-otp", json={"email": "a@a.com"})
     code = patch_email_sender.send_otp.await_args.kwargs["code"]
-    await async_client.post(
-        "/api/v1/auth/verify-otp", json={"email": "a@a.com", "code": code}
-    )
+    await async_client.post("/api/v1/auth/verify-otp", json={"email": "a@a.com", "code": code})
 
     resp = await async_client.get("/api/v1/auth/me")
     assert resp.status_code == 200
@@ -79,9 +71,7 @@ async def test_me_returns_user_when_authenticated(
 async def test_logout_clears_cookie(async_client: AsyncClient, patch_email_sender):
     await async_client.post("/api/v1/auth/request-otp", json={"email": "a@a.com"})
     code = patch_email_sender.send_otp.await_args.kwargs["code"]
-    await async_client.post(
-        "/api/v1/auth/verify-otp", json={"email": "a@a.com", "code": code}
-    )
+    await async_client.post("/api/v1/auth/verify-otp", json={"email": "a@a.com", "code": code})
 
     resp = await async_client.post("/api/v1/auth/logout")
     assert resp.status_code == 204

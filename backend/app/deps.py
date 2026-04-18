@@ -28,7 +28,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-def get_email_sender(settings: Settings = Depends(get_settings)) -> EmailSender:
+def get_email_sender(settings: Settings = Depends(get_settings)) -> EmailSender:  # noqa: B008
     if settings.email_backend == "console":
         return ConsoleSender(from_addr=settings.smtp_from)
     return SMTPSender(
@@ -42,9 +42,9 @@ def get_email_sender(settings: Settings = Depends(get_settings)) -> EmailSender:
 
 
 def get_auth_service(
-    session: AsyncSession = Depends(get_session),
-    settings: Settings = Depends(get_settings),
-    sender: EmailSender = Depends(get_email_sender),
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    settings: Settings = Depends(get_settings),  # noqa: B008
+    sender: EmailSender = Depends(get_email_sender),  # noqa: B008
 ) -> AuthService:
     return AuthService(
         session=session,
@@ -76,8 +76,8 @@ def extract_user_id_from_request(request: Request, *, settings: Settings) -> UUI
 
 async def get_current_user(
     request: Request,
-    session: AsyncSession = Depends(get_session),
-    settings: Settings = Depends(get_settings),
+    session: AsyncSession = Depends(get_session),  # noqa: B008
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> User:
     user_id = extract_user_id_from_request(request, settings=settings)
     stmt = select(User).where(User.id == user_id)

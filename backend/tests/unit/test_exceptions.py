@@ -1,11 +1,9 @@
-import pytest
-
 from app.core.exceptions import (
     AppException,
-    NotFoundError,
-    UnauthorizedError,
     BadRequestError,
+    NotFoundError,
     RateLimitError,
+    UnauthorizedError,
 )
 
 

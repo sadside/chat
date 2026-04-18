@@ -9,10 +9,10 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.config import get_settings
-from app.db.base import Base
 
 # --- импорт всех моделей, чтобы autogenerate их видел ---
 from app.db import models  # noqa: F401
+from app.db.base import Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

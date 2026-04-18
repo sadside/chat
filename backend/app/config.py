@@ -59,7 +59,7 @@ class Settings(BaseSettings):
         return [o.strip() for o in raw.split(",") if o.strip()]
 
     @model_validator(mode="after")
-    def _validate_cookie_samesite_secure(self) -> "Settings":
+    def _validate_cookie_samesite_secure(self) -> Settings:
         # Modern browsers silently reject `SameSite=None` cookies that are not `Secure`.
         # Surface the misconfiguration at startup instead of letting auth fail at runtime.
         if self.jwt_cookie_samesite == "none" and not self.jwt_cookie_secure:

@@ -20,7 +20,7 @@ class User(UuidPkMixin, Base):
         server_default=func.now(),
     )
 
-    chats: Mapped[list["Chat"]] = relationship(
+    chats: Mapped[list[Chat]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -56,8 +56,8 @@ class Chat(UuidPkMixin, TimestampsMixin, Base):
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False, default="New chat")
 
-    user: Mapped["User"] = relationship(back_populates="chats")
-    messages: Mapped[list["Message"]] = relationship(
+    user: Mapped[User] = relationship(back_populates="chats")
+    messages: Mapped[list[Message]] = relationship(
         back_populates="chat",
         cascade="all, delete-orphan",
         order_by="Message.created_at",
@@ -82,7 +82,7 @@ class Message(UuidPkMixin, Base):
         server_default=func.now(),
     )
 
-    chat: Mapped["Chat"] = relationship(back_populates="messages")
+    chat: Mapped[Chat] = relationship(back_populates="messages")
 
 
-__all__ = ["User", "OtpCode", "Chat", "Message"]
+__all__ = ["Chat", "Message", "OtpCode", "User"]

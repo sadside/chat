@@ -6,7 +6,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_request_otp_ip_rate_limit(async_client: AsyncClient, patch_email_sender):
-    # 10 запросов подряд с одного IP → 11-й блокируется
+    # 10 запросов подряд c одного IP -> 11-й блокируется
     for i in range(10):
         await async_client.post(
             "/api/v1/auth/request-otp",

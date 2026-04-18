@@ -18,7 +18,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def request_otp(
     request: Request,
     payload: RequestOtpIn,
-    service: AuthService = Depends(get_auth_service),
+    service: AuthService = Depends(get_auth_service),  # noqa: B008
 ) -> None:
     await service.request_otp(email=payload.email)
 
@@ -27,8 +27,8 @@ async def request_otp(
 async def verify_otp(
     payload: VerifyOtpIn,
     response: Response,
-    service: AuthService = Depends(get_auth_service),
-    settings: Settings = Depends(get_settings),
+    service: AuthService = Depends(get_auth_service),  # noqa: B008
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> MeOut:
     token, user = await service.verify_otp(email=payload.email, code=payload.code)
     response.set_cookie(
@@ -44,13 +44,13 @@ async def verify_otp(
 
 
 @router.get("/me", response_model=MeOut)
-async def me(current: User = Depends(get_current_user)) -> MeOut:
+async def me(current: User = Depends(get_current_user)) -> MeOut:  # noqa: B008
     return MeOut(user=UserOut.model_validate(current))
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
     response: Response,
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_settings),  # noqa: B008
 ) -> None:
     response.delete_cookie(key=settings.jwt_cookie_name, path="/")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytest
@@ -25,7 +25,7 @@ async def test_create_otp_code(db_session):
     otp = OtpCode(
         email="a@b.com",
         code_hash="x" * 64,
-        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+        expires_at=datetime.now(UTC) + timedelta(minutes=10),
     )
     db_session.add(otp)
     await db_session.flush()
