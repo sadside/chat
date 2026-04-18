@@ -5,11 +5,17 @@ import type { AuthUser } from '@/shared/store/auth-store';
 
 export const ME_QUERY_KEY = ['auth', 'me'] as const;
 
+// Backend `GET /auth/me` returns `{ user: { id, email } }` (MeOut schema).
+interface MeResponse {
+  user: AuthUser;
+}
+
 export const meQueryOptions = queryOptions<AuthUser | null>({
   queryKey: ME_QUERY_KEY,
   queryFn: async () => {
     try {
-      return await apiClient.get('auth/me').json<AuthUser>();
+      const res = await apiClient.get('auth/me').json<MeResponse>();
+      return res.user;
     } catch (err: unknown) {
       // 401 is expected when unauthenticated — treat as null user
       const status = (err as { response?: { status?: number } })?.response?.status;

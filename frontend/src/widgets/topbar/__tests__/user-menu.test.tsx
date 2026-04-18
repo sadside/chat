@@ -46,7 +46,7 @@ describe('UserMenu', () => {
     render(<UserMenu />, { wrapper });
     const user = userEvent.setup();
     await user.click(screen.getByRole('button'));
-    await user.click(await screen.findByText(/log out/i));
+    await user.click(await screen.findByText(/выйти/i));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith({ to: '/auth' }));
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });

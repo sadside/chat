@@ -40,7 +40,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           className="flex h-8 w-8 items-center justify-center rounded-full bg-[--color-accent] text-xs font-bold text-[--color-accent-foreground] hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[--color-ring]"
-          aria-label="User menu"
+          aria-label="Меню пользователя"
         >
           {initials}
         </button>
@@ -56,7 +56,7 @@ export function UserMenu() {
           className="text-red-400 focus:text-red-300"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Log out
+          Выйти
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

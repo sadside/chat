@@ -4,9 +4,9 @@ import { http, HttpResponse } from 'msw';
 const BASE = 'http://localhost:8080/api/v1';
 
 export const handlers = [
-  // GET /auth/me — authenticated by default
+  // GET /auth/me — authenticated by default. Backend returns MeOut: { user: {...} }.
   http.get(`${BASE}/auth/me`, () =>
-    HttpResponse.json({ id: 'user-1', email: 'test@example.com' })
+    HttpResponse.json({ user: { id: 'user-1', email: 'test@example.com' } })
   ),
 
   // POST /auth/request-otp
@@ -14,9 +14,9 @@ export const handlers = [
     new HttpResponse(null, { status: 204 })
   ),
 
-  // POST /auth/verify-otp
+  // POST /auth/verify-otp — backend returns MeOut: { user: {...} }.
   http.post(`${BASE}/auth/verify-otp`, () =>
-    HttpResponse.json({ id: 'user-1', email: 'test@example.com' })
+    HttpResponse.json({ user: { id: 'user-1', email: 'test@example.com' } })
   ),
 
   // POST /auth/logout

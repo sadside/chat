@@ -10,9 +10,18 @@ export function useRequestOtpMutation() {
   });
 }
 
+// Backend returns `{ user: { id, email } }` (MeOut schema).
+interface VerifyOtpResponse {
+  user: AuthUser;
+}
+
 export function useVerifyOtpMutation() {
   return useMutation({
-    mutationFn: ({ email, code }: { email: string; code: string }) =>
-      apiClient.post('auth/verify-otp', { json: { email, code } }).json<AuthUser>(),
+    mutationFn: async ({ email, code }: { email: string; code: string }) => {
+      const res = await apiClient
+        .post('auth/verify-otp', { json: { email, code } })
+        .json<VerifyOtpResponse>();
+      return res.user;
+    },
   });
 }
