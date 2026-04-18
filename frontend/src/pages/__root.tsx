@@ -12,10 +12,14 @@ import { useUiStore } from '@/shared/store/ui-store';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 import { ErrorBoundary } from '@/app/error-boundary';
 import { Toaster } from '@/shared/ui/sonner';
+import { useMeQuery } from '@/entities/user/api';
+import { useAuthStore } from '@/shared/store/auth-store';
 
 function RootLayout() {
   const { sidebarOpen, closeSidebar } = useUiStore();
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const { data: meUser } = useMeQuery();
+  const { setUser, clearUser } = useAuthStore();
 
   // Close mobile drawer when resizing to desktop
   useEffect(() => {
@@ -23,6 +27,15 @@ function RootLayout() {
       closeSidebar();
     }
   }, [isDesktop, sidebarOpen, closeSidebar]);
+
+  // Sync server auth state into the zustand store
+  useEffect(() => {
+    if (meUser) {
+      setUser(meUser);
+    } else {
+      clearUser();
+    }
+  }, [meUser, setUser, clearUser]);
 
   return (
     <ErrorBoundary>
@@ -50,8 +63,8 @@ function RootLayout() {
           </main>
         </div>
       </div>
+      <Toaster />
     </ErrorBoundary>
-    <Toaster />
   );
 }
 

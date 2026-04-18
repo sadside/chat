@@ -1,4 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { queryClient } from '@/app/providers/query-provider';
+import { meQueryOptions } from '@/entities/user/api';
 
 function WelcomePage() {
   return (
@@ -16,5 +18,15 @@ function WelcomePage() {
 }
 
 export const Route = createFileRoute('/')({
+  beforeLoad: async () => {
+    // Check auth — redirect to /auth if unauthenticated
+    try {
+      const user = await queryClient.ensureQueryData(meQueryOptions);
+      if (!user) throw redirect({ to: '/auth' });
+    } catch (err) {
+      if (err && typeof err === 'object' && 'to' in err) throw err;
+      throw redirect({ to: '/auth' });
+    }
+  },
   component: WelcomePage,
 });
