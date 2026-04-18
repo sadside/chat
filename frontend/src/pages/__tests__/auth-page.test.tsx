@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/msw/server';
-import React from 'react';
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
