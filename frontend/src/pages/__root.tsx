@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/ui/dialog';
-import { SidebarPlaceholder } from '@/widgets/sidebar/sidebar-placeholder';
+import { Sidebar } from '@/widgets/sidebar';
 import { Topbar } from '@/widgets/topbar/topbar';
 import { useUiStore } from '@/shared/store/ui-store';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
@@ -43,7 +43,11 @@ function RootLayout() {
         <Topbar />
         <div className="flex flex-1 overflow-hidden">
           {/* Desktop sidebar — always visible */}
-          {isDesktop && <SidebarPlaceholder />}
+          {isDesktop && (
+            <aside className="flex h-full w-64 flex-col border-r border-[--color-border] bg-[--color-background]">
+              <Sidebar />
+            </aside>
+          )}
 
           {/* Mobile sidebar — Sheet drawer */}
           {!isDesktop && (
@@ -52,7 +56,7 @@ function RootLayout() {
                 <DialogHeader className="sr-only">
                   <DialogTitle>Navigation</DialogTitle>
                 </DialogHeader>
-                <SidebarPlaceholder className="w-full border-0" />
+                <Sidebar />
               </DialogContent>
             </Dialog>
           )}
