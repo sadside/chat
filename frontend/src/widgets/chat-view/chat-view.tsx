@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
+import { ru } from 'date-fns/locale';
 import { useAutoScroll } from '@/shared/hooks/use-auto-scroll';
 import { useStreamStore } from '@/shared/store/stream-store';
 import { MessageBubble } from './message-bubble';
@@ -16,7 +17,7 @@ function formatDividerDate(dateStr: string): string {
   const d = new Date(dateStr);
   if (isToday(d)) return 'Сегодня';
   if (isYesterday(d)) return 'Вчера';
-  return format(d, 'd MMMM yyyy');
+  return format(d, 'd MMMM yyyy', { locale: ru });
 }
 
 export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewProps) {
