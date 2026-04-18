@@ -1,0 +1,95 @@
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+
+export type StreamStatus = 'idle' | 'streaming' | 'stopping' | 'done' | 'error';
+
+export interface StreamState {
+  chatId: string | null;
+  status: StreamStatus;
+  // Optimistic user message (shown immediately before SSE user_message arrives)
+  optimisticUserMessage: {
+    id: string;
+    content: string;
+    created_at: string;
+  } | null;
+  // In-flight assistant message
+  assistantMessageId: string | null;
+  assistantContent: string;
+  aborted: boolean;
+  error: string | null;
+
+  // Actions
+  startStream: (chatId: string, optimisticContent: string) => void;
+  setAssistantId: (id: string) => void;
+  appendDelta: (text: string) => void;
+  finishStream: (finalContent: string, aborted: boolean) => void;
+  setError: (message: string) => void;
+  reset: () => void;
+}
+
+const INITIAL: Omit<StreamState, keyof Pick<StreamState,
+  'startStream' | 'setAssistantId' | 'appendDelta' | 'finishStream' | 'setError' | 'reset'
+>> = {
+  chatId: null,
+  status: 'idle',
+  optimisticUserMessage: null,
+  assistantMessageId: null,
+  assistantContent: '',
+  aborted: false,
+  error: null,
+};
+
+export const useStreamStore = create<StreamState>()(
+  immer((set) => ({
+    ...INITIAL,
+
+    startStream(chatId, optimisticContent) {
+      set((s) => {
+        s.chatId = chatId;
+        s.status = 'streaming';
+        s.optimisticUserMessage = {
+          id: `optimistic-${Date.now()}`,
+          content: optimisticContent,
+          created_at: new Date().toISOString(),
+        };
+        s.assistantMessageId = null;
+        s.assistantContent = '';
+        s.aborted = false;
+        s.error = null;
+      });
+    },
+
+    setAssistantId(id) {
+      set((s) => {
+        s.assistantMessageId = id;
+      });
+    },
+
+    appendDelta(text) {
+      set((s) => {
+        s.assistantContent += text;
+      });
+    },
+
+    finishStream(finalContent, aborted) {
+      set((s) => {
+        s.status = 'done';
+        s.assistantContent = finalContent;
+        s.aborted = aborted;
+      });
+    },
+
+    setError(message) {
+      set((s) => {
+        s.status = 'error';
+        s.error = message;
+      });
+    },
+
+    reset() {
+      set((s) => {
+        Object.assign(s, INITIAL);
+      });
+    },
+  }))
+);
