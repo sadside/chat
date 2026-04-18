@@ -40,9 +40,11 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
       stream.chatId === chatId && stream.status !== 'idle';
 
     // Append optimistic user message until the real row shows up in messages.
+    // Dedupe by id — after user_message event we adopt the server-assigned id
+    // so the optimistic bubble and the refetched real row share the same key.
     if (overlayActive && stream.optimisticUserMessage) {
       const alreadyExists = messages.some(
-        (m) => m.role === 'user' && m.content === stream.optimisticUserMessage!.content
+        (m) => m.id === stream.optimisticUserMessage!.id,
       );
       if (!alreadyExists) {
         allMessages.push({

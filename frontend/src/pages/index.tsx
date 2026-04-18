@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Composer } from '@/widgets/composer';
 import { EmptyState } from '@/widgets/chat-view';
 import { useStreamStore } from '@/shared/store/stream-store';
+import { startMessageStream } from '@/features/send-message';
 import { queryClient } from '@/app/providers/query-provider';
 import { meQueryOptions } from '@/entities/user/api';
 import type { Chat } from '@/entities/chat/types';
@@ -35,14 +36,19 @@ function HomePage() {
     async (content: string) => {
       setCreating(true);
       try {
+        // 1. Create the chat shell server-side.
         const chat = await api.post('chats').json<Chat>();
         qc.invalidateQueries({ queryKey: chatKeys.list() });
-        // Navigate first, then the chat page will trigger the send
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (router.navigate as any)({
+
+        // 2. Kick off the SSE stream BEFORE navigating so the chat page
+        // already sees an active overlay on its first render — no flash
+        // of skeleton → empty-state → chat view during hand-off.
+        void startMessageStream({ chatId: chat.id, content, qc });
+
+        // 3. Navigate to the chat route. No state handoff needed anymore.
+        await router.navigate({
           to: '/chats/$chatId',
           params: { chatId: chat.id },
-          state: { pendingMessage: content },
         });
       } finally {
         setCreating(false);

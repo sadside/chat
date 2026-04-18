@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 import { MarkdownContent } from '@/shared/ui/markdown-content';
 import { useCopyToClipboard } from '@/shared/hooks/use-clipboard';
@@ -22,12 +21,13 @@ export function MessageBubble({
   const { copy, copied } = useCopyToClipboard();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.15 }}
+    // Mount-only fade-in via Tailwind (animate-in runs exactly once when the
+    // element enters the DOM; subsequent re-renders during streaming deltas
+    // do NOT replay it).
+    <div
       className={cn(
         'group flex gap-3',
+        'animate-in fade-in-0 slide-in-from-bottom-1 duration-150 ease-out',
         isUser ? 'flex-row-reverse' : 'flex-row'
       )}
     >
@@ -96,6 +96,6 @@ export function MessageBubble({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

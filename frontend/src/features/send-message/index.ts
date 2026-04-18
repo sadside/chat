@@ -1,1 +1,1 @@
-export { useStreamChat } from './model';
+export { useStreamChat, startMessageStream } from './model';
