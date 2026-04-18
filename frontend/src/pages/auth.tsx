@@ -1,6 +1,7 @@
 // frontend/src/pages/auth.tsx
 import { createFileRoute } from '@tanstack/react-router';
 import { AuthCard } from '@/features/auth-login/ui/AuthCard';
+import { AuthBackground } from '@/features/auth-login/ui/AuthBackground';
 import { useOtpFlowStore } from '@/features/auth-login/model';
 import { useEffect } from 'react';
 
@@ -13,14 +14,29 @@ export function AuthPage() {
   }, [reset]);
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-12">
-      {/* Brand wordmark */}
-      <div className="mb-8 text-center">
-        <span className="text-3xl font-black tracking-tight text-[--color-foreground]">
-          Nova
-        </span>
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-[--color-background]">
+      <AuthBackground />
+
+      {/* Content layer */}
+      <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
+        {/* Brand wordmark */}
+        <div className="text-center">
+          <span
+            className="text-4xl font-black tracking-tight select-none bg-clip-text text-transparent"
+            style={{
+              backgroundImage:
+                'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent-alt) 100%)',
+            }}
+          >
+            ·Nova
+          </span>
+          <p className="mt-1 text-xs text-[--color-muted-foreground] tracking-wide uppercase">
+            Локальный AI-чат с приватностью.
+          </p>
+        </div>
+
+        <AuthCard />
       </div>
-      <AuthCard />
     </div>
   );
 }

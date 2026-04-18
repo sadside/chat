@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { useOtpFlow } from '@/features/auth-login/model';
 
 const schema = z.object({
-  email: z.string().email('Please enter a valid email address.'),
+  email: z.string().email('Введите корректный e-mail.'),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -36,12 +36,12 @@ export function EmailStep() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email-input">Email</Label>
+        <Label htmlFor="email-input">E-mail</Label>
         <Input
           id="email-input"
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder="вы@example.com"
           aria-invalid={!!fieldError}
           aria-describedby={fieldError ? 'email-error' : undefined}
           disabled={isLoading}
@@ -57,10 +57,10 @@ export function EmailStep() {
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Sending…
+            Отправляем…
           </>
         ) : (
-          'Continue'
+          'Продолжить'
         )}
       </Button>
     </form>

@@ -25,19 +25,19 @@ beforeEach(() => {
 });
 
 describe('EmailStep', () => {
-  it('renders email input and submit button', () => {
+  it('renders email input and submit button in Russian', () => {
     render(<EmailStep />, { wrapper });
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /continue/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /продолжить/i })).toBeInTheDocument();
   });
 
-  it('shows validation error for bad email', async () => {
+  it('shows Russian validation error for bad email', async () => {
     render(<EmailStep />, { wrapper });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'not-an-email');
-    await user.click(screen.getByRole('button', { name: /continue/i }));
+    await user.type(screen.getByLabelText(/e-mail/i), 'not-an-email');
+    await user.click(screen.getByRole('button', { name: /продолжить/i }));
     await waitFor(() =>
-      expect(screen.getByRole('alert')).toHaveTextContent(/valid email/i)
+      expect(screen.getByRole('alert')).toHaveTextContent(/корректный e-mail/i)
     );
   });
 
@@ -51,8 +51,8 @@ describe('EmailStep', () => {
     );
     render(<EmailStep />, { wrapper });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'user@example.com');
-    await user.click(screen.getByRole('button', { name: /continue/i }));
+    await user.type(screen.getByLabelText(/e-mail/i), 'user@example.com');
+    await user.click(screen.getByRole('button', { name: /продолжить/i }));
     await waitFor(() => expect(called).toBe(true));
   });
 });
@@ -62,9 +62,10 @@ describe('CodeStep', () => {
     useOtpFlowStore.setState({ stage: 'code-input', email: 'user@example.com', error: '' });
   });
 
-  it('renders code input with email shown', () => {
+  it('renders OTP input with email shown', () => {
     render(<CodeStep />, { wrapper });
-    expect(screen.getByLabelText(/code/i)).toBeInTheDocument();
+    // input-otp renders a single accessible textbox
+    expect(screen.getByRole('textbox', { name: /код подтверждения/i })).toBeInTheDocument();
     expect(screen.getByText(/user@example\.com/)).toBeInTheDocument();
   });
 
@@ -76,7 +77,7 @@ describe('CodeStep', () => {
     );
     render(<CodeStep />, { wrapper });
     const user = userEvent.setup();
-    const input = screen.getByLabelText(/code/i);
+    const input = screen.getByRole('textbox', { name: /код подтверждения/i });
     await user.type(input, '000000');
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(/invalid|expired/i)
@@ -93,7 +94,7 @@ describe('CodeStep', () => {
     );
     render(<CodeStep />, { wrapper });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/code/i), '123456');
+    await user.type(screen.getByRole('textbox', { name: /код подтверждения/i }), '123456');
     await waitFor(() => expect(called).toBe(true));
   });
 });

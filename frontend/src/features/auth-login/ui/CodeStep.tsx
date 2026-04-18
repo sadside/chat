@@ -1,19 +1,18 @@
 // frontend/src/features/auth-login/ui/CodeStep.tsx
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
-import { Label } from '@/shared/ui/label';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/shared/ui/input-otp';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useOtpFlow } from '@/features/auth-login/model';
 
 const schema = z.object({
   code: z
     .string()
-    .length(6, 'Code must be exactly 6 digits.')
-    .regex(/^\d{6}$/, 'Code must be 6 digits.'),
+    .length(6, 'Код должен содержать ровно 6 цифр.')
+    .regex(/^\d{6}$/, 'Код должен состоять из 6 цифр.'),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -22,19 +21,17 @@ export function CodeStep() {
   const autoSubmittedRef = useRef(false);
   const [cooldown, setCooldown] = useState(60);
   const {
-    register,
+    control,
     handleSubmit,
     watch,
     formState: { errors },
-    setFocus,
   } = useForm<FormValues>({ resolver: zodResolver(schema), mode: 'onChange' });
 
   const codeValue = watch('code', '');
 
   useEffect(() => {
-    setFocus('code');
     autoSubmittedRef.current = false;
-  }, [setFocus]);
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -44,7 +41,7 @@ export function CodeStep() {
 
   // Auto-submit when exactly 6 digits are typed
   useEffect(() => {
-    if (codeValue.length === 6 && /^\d{6}$/.test(codeValue) && !autoSubmittedRef.current) {
+    if (codeValue?.length === 6 && /^\d{6}$/.test(codeValue) && !autoSubmittedRef.current) {
       autoSubmittedRef.current = true;
       submitCode(codeValue);
     }
@@ -62,56 +59,72 @@ export function CodeStep() {
   const fieldError = errors.code?.message || error;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-      <p className="text-sm text-[--color-muted-foreground]">
-        We sent a 6-digit code to <span className="font-medium text-[--color-foreground]">{email}</span>.
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+      <p className="text-sm text-[--color-muted-foreground] text-center">
+        Мы отправили 6-значный код на{' '}
+        <span className="font-medium text-[--color-foreground]">{email}</span>.
       </p>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="code-input">Verification code</Label>
-        <Input
-          id="code-input"
-          type="text"
-          inputMode="numeric"
-          pattern="\d{6}"
-          maxLength={6}
-          autoComplete="one-time-code"
-          placeholder="123456"
-          aria-invalid={!!fieldError}
-          aria-describedby={fieldError ? 'code-error' : undefined}
-          disabled={isLoading}
-          {...register('code')}
+
+      <div className="flex flex-col items-center gap-2">
+        <Controller
+          name="code"
+          control={control}
+          defaultValue=""
+          render={({ field }) => (
+            <InputOTP
+              maxLength={6}
+              value={field.value}
+              onChange={field.onChange}
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              disabled={isLoading}
+              aria-invalid={!!fieldError}
+              aria-describedby={fieldError ? 'code-error' : undefined}
+              aria-label="Код подтверждения"
+            >
+              <InputOTPGroup>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+          )}
         />
         {fieldError && (
-          <p id="code-error" role="alert" className="text-sm text-red-400">
+          <p id="code-error" role="alert" aria-live="polite" className="text-sm text-red-400 text-center">
             {fieldError}
           </p>
         )}
       </div>
+
       <Button type="submit" disabled={isLoading} className="w-full">
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Verifying…
+            Проверяем…
           </>
         ) : (
-          'Verify'
+          'Подтвердить'
         )}
       </Button>
-      <button
+
+      <Button
         type="button"
+        variant="outline"
         onClick={reset}
-        className="flex items-center gap-1 text-sm text-[--color-muted-foreground] hover:text-[--color-foreground] transition-colors"
+        className="w-full"
       >
-        <ArrowLeft className="h-4 w-4" />
-        Use a different email
-      </button>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Использовать другой e-mail
+      </Button>
+
       <button
         type="button"
         onClick={handleResend}
         disabled={cooldown > 0 || isLoading}
-        className="text-sm text-[--color-muted-foreground] hover:text-[--color-foreground] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="text-sm text-[--color-muted-foreground] hover:text-[--color-foreground] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-center"
       >
-        {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+        {cooldown > 0 ? `Отправить снова через ${cooldown}с` : 'Отправить код снова'}
       </button>
     </form>
   );

@@ -33,20 +33,23 @@ describe('Full OTP login flow (AuthCard)', () => {
     render(<AuthCard />, { wrapper });
     const user = userEvent.setup();
 
-    // Stage 1: email
-    expect(screen.getByText(/sign in to nova/i)).toBeInTheDocument();
-    await user.type(screen.getByLabelText(/email/i), 'login@example.com');
-    await user.click(screen.getByRole('button', { name: /continue/i }));
+    // Stage 1: email — Russian heading
+    expect(screen.getByText(/войти в nova/i)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/e-mail/i), 'login@example.com');
+    await user.click(screen.getByRole('button', { name: /продолжить/i }));
 
-    // Stage 2: code
-    await waitFor(() => expect(screen.getByLabelText(/code/i)).toBeInTheDocument());
+    // Stage 2: code — OTP input present
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: /код подтверждения/i })).toBeInTheDocument()
+    );
     expect(screen.getByText(/login@example\.com/)).toBeInTheDocument();
 
-    // Auto-submit on 6 digits
-    await user.type(screen.getByLabelText(/code/i), '123456');
+    // Auto-submit on 6 digits via the OTP input
+    const otpInput = screen.getByRole('textbox', { name: /код подтверждения/i });
+    await user.type(otpInput, '123456');
 
     // Stage 3: success
-    await waitFor(() => expect(screen.getByText(/redirecting/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/готово/i)).toBeInTheDocument());
     expect(mockNavigate).toHaveBeenCalledWith({ to: '/' });
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
   });
@@ -59,8 +62,8 @@ describe('Full OTP login flow (AuthCard)', () => {
     );
     render(<AuthCard />, { wrapper });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'x@example.com');
-    await user.click(screen.getByRole('button', { name: /continue/i }));
+    await user.type(screen.getByLabelText(/e-mail/i), 'x@example.com');
+    await user.click(screen.getByRole('button', { name: /продолжить/i }));
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(/too many attempts/i)
     );
@@ -69,30 +72,35 @@ describe('Full OTP login flow (AuthCard)', () => {
   it('invalid code shows inline error and stays on code step', async () => {
     render(<AuthCard />, { wrapper });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'y@example.com');
-    await user.click(screen.getByRole('button', { name: /continue/i }));
-    await waitFor(() => screen.getByLabelText(/code/i));
+    await user.type(screen.getByLabelText(/e-mail/i), 'y@example.com');
+    await user.click(screen.getByRole('button', { name: /продолжить/i }));
+    await waitFor(() =>
+      screen.getByRole('textbox', { name: /код подтверждения/i })
+    );
 
     server.use(
       http.post('http://localhost:8080/api/v1/auth/verify-otp', () =>
         HttpResponse.json({ detail: 'Invalid or expired code' }, { status: 400 })
       )
     );
-    await user.type(screen.getByLabelText(/code/i), '000000');
+    const otpInput = screen.getByRole('textbox', { name: /код подтверждения/i });
+    await user.type(otpInput, '000000');
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent(/invalid|expired/i)
     );
     expect(useOtpFlowStore.getState().stage).toBe('code-input');
   });
 
-  it('"Use a different email" resets to email step', async () => {
+  it('"Использовать другой e-mail" resets to email step', async () => {
     render(<AuthCard />, { wrapper });
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/email/i), 'z@example.com');
-    await user.click(screen.getByRole('button', { name: /continue/i }));
-    await waitFor(() => screen.getByLabelText(/code/i));
-    await user.click(screen.getByText(/use a different email/i));
+    await user.type(screen.getByLabelText(/e-mail/i), 'z@example.com');
+    await user.click(screen.getByRole('button', { name: /продолжить/i }));
+    await waitFor(() =>
+      screen.getByRole('textbox', { name: /код подтверждения/i })
+    );
+    await user.click(screen.getByRole('button', { name: /использовать другой e-mail/i }));
     expect(useOtpFlowStore.getState().stage).toBe('email-input');
-    await waitFor(() => expect(screen.getByLabelText(/email/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument());
   });
 });

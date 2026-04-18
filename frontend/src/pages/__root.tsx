@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
 import {
   Dialog,
@@ -20,6 +20,7 @@ function RootLayout() {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const { data: meUser } = useMeQuery();
   const { setUser, clearUser } = useAuthStore();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   // Close mobile drawer when resizing to desktop
   useEffect(() => {
@@ -36,6 +37,16 @@ function RootLayout() {
       clearUser();
     }
   }, [meUser, setUser, clearUser]);
+
+  // Auth pages get a minimal layout — no sidebar/topbar
+  if (pathname.startsWith('/auth')) {
+    return (
+      <ErrorBoundary>
+        <Outlet />
+        <Toaster />
+      </ErrorBoundary>
+    );
+  }
 
   return (
     <ErrorBoundary>
