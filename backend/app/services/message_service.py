@@ -85,7 +85,11 @@ class MessageService:
         On LLM error: error event (stream stays open until here, then closes).
         CancelledError: partial assistant saved with aborted=True via fresh session.
         """
-        await self._get_chat_or_404(chat_id, user_id)
+        try:
+            await self._get_chat_or_404(chat_id, user_id)
+        except NotFoundError as exc:
+            yield _sse("error", {"code": exc.code, "message": exc.message})
+            return
 
         # 1. Save user message
         user_msg = Message(chat_id=chat_id, role="user", content=content)
@@ -156,12 +160,12 @@ class MessageService:
                         )
                     )
                     from app.db.models import Chat as ChatModel  # noqa: PLC0415
-                    from datetime import datetime, timezone  # noqa: PLC0415
+                    import datetime as _dt  # noqa: PLC0415
 
                     await fresh.execute(
                         update(ChatModel)
                         .where(ChatModel.id == chat_id)
-                        .values(updated_at=datetime.now(timezone.utc))
+                        .values(updated_at=_dt.datetime.now(_dt.timezone.utc))
                     )
                     await fresh.commit()
                 return
@@ -206,7 +210,12 @@ class MessageService:
         Remove last assistant message, replay streaming with the same history.
         Yields same SSE sequence as stream_new_message (minus user_message event).
         """
-        await self._get_chat_or_404(chat_id, user_id)
+        try:
+            await self._get_chat_or_404(chat_id, user_id)
+        except NotFoundError as exc:
+            yield _sse("error", {"code": exc.code, "message": exc.message})
+            return
+
         messages_in_db = await self._get_messages(chat_id)
 
         # Find and remove last assistant message
@@ -216,7 +225,8 @@ class MessageService:
                 last_assistant = msg
                 break
         if last_assistant is None:
-            raise NotFoundError("No assistant message to regenerate")
+            yield _sse("error", {"code": "NOT_FOUND", "message": "No assistant message to regenerate"})
+            return
 
         await self._db.delete(last_assistant)
         await self._db.flush()

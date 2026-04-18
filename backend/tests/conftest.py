@@ -143,6 +143,15 @@ async def auth_client_b(app) -> AsyncGenerator[AsyncClient, None]:
 
 
 @pytest_asyncio.fixture
-def db():
-    """Factory for fresh DB sessions (for test assertions)."""
-    return AsyncSessionLocal
+def db(db_session: AsyncSession):
+    """Context-manager factory that yields the current test transaction session.
+
+    Usage: ``async with db() as session: ...``
+    """
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def _factory():
+        yield db_session
+
+    return _factory
