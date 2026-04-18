@@ -46,3 +46,12 @@ class RateLimitError(AppException):
     code = "RATE_LIMITED"
     status_code = 429
     message = "Too many requests"
+
+
+class LlmUnavailableError(AppException):
+    def __init__(self, message: str = "LLM service is unavailable") -> None:
+        super().__init__(
+            status_code=503,
+            code="LLM_UNAVAILABLE",
+            message=message,
+        )
