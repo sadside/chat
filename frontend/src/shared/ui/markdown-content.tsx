@@ -65,6 +65,15 @@ function rewriteMathInProse(src: string): string {
     (_m, body) => `$${body.trim()}$`,
   );
 
+  // Undelimited block formula: a line with 2+ backslash commands (\frac,
+  // \sum, \left, \lim, \mu, \sigma …) and no existing `$`. Local LLMs
+  // sometimes forget to wrap the whole formula in `$$`. We wrap the
+  // suspicious line ourselves so KaTeX actually gets a chance.
+  out = out.replace(
+    /(^|\n)([^\n$`]*\\[a-zA-Z]+[^\n$`]*\\[a-zA-Z]+[^\n$`]*)(?=\n|$)/g,
+    (_m, lead, body) => `${lead}\n$$${body.trim()}$$\n`,
+  );
+
   // Sanitise common LaTeX mistakes local models make inside a $...$ block.
   // Only operate inside math delimiters so prose is untouched.
   out = out.replace(/(\$\$?[\s\S]*?\$\$?)/g, (block) => sanitiseMathBody(block));
