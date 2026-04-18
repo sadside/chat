@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { ThemeToggle } from './theme-toggle';
+import { UserMenu } from './user-menu';
 import { useUiStore } from '@/shared/store/ui-store';
 import { useMediaQuery } from '@/shared/hooks/use-media-query';
 
@@ -29,8 +30,9 @@ export function Topbar() {
         </span>
       </div>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
+        <UserMenu />
       </div>
     </header>
   );
