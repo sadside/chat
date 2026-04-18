@@ -14,3 +14,7 @@ if (!_parsed.success) {
 }
 
 export const env = _parsed.data;
+
+export function getApiBase(): string {
+  return env.VITE_API_URL;
+}
