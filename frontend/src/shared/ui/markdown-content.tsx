@@ -22,8 +22,24 @@ interface MarkdownContentProps {
  * remark-math only recognises `$x$` (inline) and `$$x$$` (block). Many models
  * produce `\(x\)`, `\[x\]`, and even bare `[ x ]` / `( x )` around LaTeX —
  * we fix them up before handing the text to markdown parsing.
+ *
+ * IMPORTANT: this runs on the raw markdown and must leave code spans alone,
+ * otherwise innocuous Python/TS expressions like `len(fib_sequence)` would
+ * get rewritten into `len$fib_sequence$` because of the bare-inline rule.
+ * Strategy: split the source on fenced/inline code boundaries and only apply
+ * rewrites to the prose segments.
  */
 function normaliseLatex(src: string): string {
+  const CODE_RE = /(```[\s\S]*?```|`[^`\n]+`)/g;
+  const parts = src.split(CODE_RE);
+  for (let i = 0; i < parts.length; i += 2) {
+    // Even indices are prose; odd indices are the code spans preserved verbatim.
+    parts[i] = rewriteMathInProse(parts[i] ?? '');
+  }
+  return parts.join('');
+}
+
+function rewriteMathInProse(src: string): string {
   let out = src;
 
   // \[ ... \]  →  $$ ... $$   (block)
@@ -32,22 +48,55 @@ function normaliseLatex(src: string): string {
   // \( ... \)  →  $ ... $     (inline)
   out = out.replace(/\\\(([\s\S]+?)\\\)/g, (_m, body) => `$${body}$`);
 
-  // Bare block formula:  `[ \something ... ]` on its own line (or preceded by
-  // a newline) — matches the "[ Z_n = \frac{...} ]" pattern local models emit.
+  // Bare block formula:  `[ \something ... ]` on its own line. Require at
+  // least one backslash-command inside, otherwise we would rewrite ordinary
+  // Markdown-like `[ text ]` fragments.
   out = out.replace(
-    /(^|\n)\s*\[\s*((?:\\[a-zA-Z]+|[^\]\n]){1,})\s*\]\s*(?=\n|$)/g,
+    /(^|\n)\s*\[\s*((?:[^\]\n]*\\[a-zA-Z]+[^\]\n]*))\s*\]\s*(?=\n|$)/g,
     (_m, lead, body) => `${lead}\n$$${body.trim()}$$\n`,
   );
 
-  // Bare inline formula:  `( \something ... )` — only when body contains a
-  // backslash command or `_` / `^` subscripts so we don't eat regular
-  // parentheses in prose.
+  // Bare inline formula: `( … )` — ONLY when the body starts with a LaTeX
+  // command (backslash + letters). This keeps `len(fib_sequence)` and other
+  // plain identifiers safe while still catching `( \mu )`, `( \sigma^2 )`,
+  // `( \ldots )`, `( \frac{...} )`, etc.
   out = out.replace(
-    /\(\s*((?:\\[a-zA-Z]+[^()]*|[A-Za-z0-9]+_[A-Za-z0-9]+|[A-Za-z0-9]+\^[A-Za-z0-9]+)[^()]*)\s*\)/g,
+    /\(\s*(\\[a-zA-Z]+[^()]*)\s*\)/g,
     (_m, body) => `$${body.trim()}$`,
   );
 
+  // Sanitise common LaTeX mistakes local models make inside a $...$ block.
+  // Only operate inside math delimiters so prose is untouched.
+  out = out.replace(/(\$\$?[\s\S]*?\$\$?)/g, (block) => sanitiseMathBody(block));
+
   return out;
+}
+
+/** Fix common malformed LaTeX inside a single $…$ or $$…$$ block. */
+function sanitiseMathBody(block: string): string {
+  // Opening/closing dollars — leave them alone, only touch the body.
+  const isDisplay = block.startsWith('$$');
+  const fence = isDisplay ? '$$' : '$';
+  let body = block.slice(fence.length, block.length - fence.length);
+
+  // Collapse `\left\left` / `\right\right` runs down to a single command.
+  body = body.replace(/(\\left)(?:\s*\\left)+/g, '\\left');
+  body = body.replace(/(\\right)(?:\s*\\right)+/g, '\\right');
+
+  // `\right=` (and friends) → `\right. =`. KaTeX needs a delimiter argument
+  // after \right; `.` is the valid "empty" one.
+  body = body.replace(/\\right(?=\s*[=<>])/g, '\\right. ');
+  body = body.replace(/\\left(?=\s*[=<>])/g, '\\left. ');
+
+  // Ensure every \left has a matching \right. If they're unbalanced, strip
+  // the orphan commands — KaTeX would fail the whole expression otherwise.
+  const leftCount = (body.match(/\\left\b/g) ?? []).length;
+  const rightCount = (body.match(/\\right\b/g) ?? []).length;
+  if (leftCount !== rightCount) {
+    body = body.replace(/\\left\b/g, '').replace(/\\right\b/g, '');
+  }
+
+  return `${fence}${body}${fence}`;
 }
 
 function PreBlock({
@@ -161,7 +210,18 @@ export function MarkdownContent({ content, streaming }: MarkdownContentProps) {
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[
           [rehypeHighlight, { detect: true, ignoreMissing: true }],
-          [rehypeKatex, { strict: false, trust: false, output: 'html' }],
+          [
+            rehypeKatex,
+            {
+              strict: 'ignore',
+              trust: false,
+              output: 'html',
+              throwOnError: false,
+              // Render malformed formulas in the current text colour instead
+              // of KaTeX's default bright red raw source.
+              errorColor: 'var(--color-muted-foreground)',
+            },
+          ],
         ]}
         components={{
           pre: ({ children, ...props }) => <PreBlock {...props}>{children}</PreBlock>,
