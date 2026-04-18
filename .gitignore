@@ -31,3 +31,11 @@ Thumbs.db
 # Project
 /data/
 pgdata/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env
+frontend/.env.local
+frontend/src/app/routeTree.gen.ts
