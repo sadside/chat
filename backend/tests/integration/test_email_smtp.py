@@ -1,9 +1,25 @@
 from __future__ import annotations
 
+import socket
+
 import httpx
 import pytest
 
 from app.services.email.smtp import SMTPSender
+
+
+def _mailpit_reachable() -> bool:
+    try:
+        with socket.create_connection(("localhost", 8025), timeout=0.3):
+            return True
+    except OSError:
+        return False
+
+
+pytestmark = pytest.mark.skipif(
+    not _mailpit_reachable(),
+    reason="Mailpit not reachable on localhost:8025 — start it via `docker compose up -d mailpit`",
+)
 
 
 @pytest.mark.asyncio

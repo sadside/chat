@@ -1,25 +1,25 @@
 from __future__ import annotations
 
-import asyncio
 from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
+from app.core.rate_limit import limiter
 from app.db.base import Base
 from app.deps import get_email_sender, get_session
 from app.main import create_app
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture(autouse=True)
+async def _reset_rate_limiter():
+    """Reset slowapi's in-memory state so per-IP limits do not leak between tests."""
+    limiter.reset()
+    yield
+    limiter.reset()
 
 
 @pytest_asyncio.fixture(scope="session")

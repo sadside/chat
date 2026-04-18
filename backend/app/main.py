@@ -31,9 +31,16 @@ def create_app() -> FastAPI:
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
 
+    # Wildcard origins are only safe in development; in production we require an
+    # explicit allow-list to avoid accidental credentialed-cross-origin exposure.
+    cors_origins = (
+        settings.app_cors_origins
+        if settings.app_cors_origins
+        else (["*"] if settings.app_env == "development" else [])
+    )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.app_cors_origins or ["*"],
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

@@ -16,10 +16,18 @@ def test_request_otp_in_rejects_bad_email():
         RequestOtpIn(email="not-an-email")
 
 
-def test_verify_otp_in_requires_6_digits():
+def test_verify_otp_in_accepts_digit_codes_within_range():
+    # Pattern allows 4-10 digits to match the configurable otp_code_length.
+    VerifyOtpIn(email="a@b.com", code="1234")
     VerifyOtpIn(email="a@b.com", code="123456")
+    VerifyOtpIn(email="a@b.com", code="1234567890")
+
+
+def test_verify_otp_in_rejects_too_short_or_non_digits():
     with pytest.raises(ValidationError):
-        VerifyOtpIn(email="a@b.com", code="12345")
+        VerifyOtpIn(email="a@b.com", code="123")  # too short
+    with pytest.raises(ValidationError):
+        VerifyOtpIn(email="a@b.com", code="12345678901")  # too long
     with pytest.raises(ValidationError):
         VerifyOtpIn(email="a@b.com", code="abcdef")
 

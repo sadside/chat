@@ -16,7 +16,7 @@ class RequestOtpIn(BaseModel):
 
 class VerifyOtpIn(BaseModel):
     email: EmailStr
-    code: str = Field(pattern=r"^\d{6}$")
+    code: str = Field(pattern=r"^\d{4,10}$")
 
     @field_validator("email", mode="before")
     @classmethod

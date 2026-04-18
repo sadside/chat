@@ -4,6 +4,17 @@ from email.message import EmailMessage
 
 import aiosmtplib
 
+from app.core.exceptions import AppException
+from app.core.logging import get_logger
+
+_logger = get_logger(__name__)
+
+
+class EmailDeliveryError(AppException):
+    code = "EMAIL_UNAVAILABLE"
+    status_code = 503
+    message = "Failed to deliver email"
+
 
 class SMTPSender:
     def __init__(
@@ -33,12 +44,17 @@ class SMTPSender:
             f"It expires in a few minutes. If you did not request it, ignore this email.\n"
         )
 
-        await aiosmtplib.send(
-            msg,
-            hostname=self._host,
-            port=self._port,
-            username=self._username or None,
-            password=self._password or None,
-            use_tls=self._use_tls,
-            start_tls=False,
-        )
+        try:
+            await aiosmtplib.send(
+                msg,
+                hostname=self._host,
+                port=self._port,
+                username=self._username or None,
+                password=self._password or None,
+                use_tls=self._use_tls,
+                start_tls=False,
+            )
+        except (aiosmtplib.SMTPException, OSError) as exc:
+            # Do not leak the OTP or SMTP internals to the client.
+            _logger.error("smtp_send_failed", host=self._host, port=self._port, error=str(exc))
+            raise EmailDeliveryError() from exc
