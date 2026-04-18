@@ -9,6 +9,7 @@ import type { Message } from '@/entities/message/types';
 
 interface ChatViewProps {
   messages: Message[];
+  chatId: string;
   onRegenerate?: (() => void) | undefined;
   onExamplePrompt?: ((prompt: string) => void) | undefined;
 }
@@ -20,7 +21,7 @@ function formatDividerDate(dateStr: string): string {
   return format(d, 'd MMMM yyyy', { locale: ru });
 }
 
-export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewProps) {
+export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: ChatViewProps) {
   const stream = useStreamStore();
   const isStreaming = stream.status === 'streaming' || stream.status === 'stopping';
 
@@ -31,8 +32,15 @@ export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewPr
 
     const allMessages: Message[] = [...messages];
 
-    // Append optimistic user message if streaming and not yet in messages list
-    if (isStreaming && stream.optimisticUserMessage) {
+    // The overlay is relevant whenever we have an active stream for THIS
+    // chat — including the short window between `assistant_done` and the
+    // messages refetch. Using `chatId` + any non-idle status guards against
+    // rendering overlay data from a stream that belongs to a different chat.
+    const overlayActive =
+      stream.chatId === chatId && stream.status !== 'idle';
+
+    // Append optimistic user message until the real row shows up in messages.
+    if (overlayActive && stream.optimisticUserMessage) {
       const alreadyExists = messages.some(
         (m) => m.role === 'user' && m.content === stream.optimisticUserMessage!.content
       );
@@ -48,8 +56,8 @@ export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewPr
       }
     }
 
-    // Append streaming assistant message
-    if ((isStreaming || stream.status === 'done') && stream.assistantMessageId) {
+    // Append streaming / just-finished assistant message.
+    if (overlayActive && stream.assistantMessageId) {
       const alreadyExists = messages.some((m) => m.id === stream.assistantMessageId);
       if (!alreadyExists) {
         allMessages.push({
@@ -73,7 +81,7 @@ export function ChatView({ messages, onRegenerate, onExamplePrompt }: ChatViewPr
     }
 
     return result;
-  }, [messages, isStreaming, stream]);
+  }, [messages, isStreaming, stream, chatId]);
 
   const { anchorRef } = useAutoScroll([displayMessages.length, stream.assistantContent]);
 

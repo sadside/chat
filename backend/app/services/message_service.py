@@ -61,7 +61,11 @@ class MessageService:
         return chat
 
     async def _get_messages(self, chat_id: UUID) -> list[Message]:
-        stmt = select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at.asc())
+        stmt = (
+            select(Message)
+            .where(Message.chat_id == chat_id)
+            .order_by(Message.created_at.asc(), Message.id.asc())
+        )
         return list((await self._db.execute(stmt)).scalars().all())
 
     async def _count_exchanges(self, chat_id: UUID) -> int:
@@ -87,8 +91,18 @@ class MessageService:
             yield _sse("error", {"code": exc.code, "message": exc.message})
             return
 
-        # 1. Save user message
-        user_msg = Message(chat_id=chat_id, role="user", content=content)
+        # 1. Save user message.
+        # IMPORTANT: pass an explicit Python-side timestamp instead of relying on
+        # server_default=func.now(). Inside one Postgres transaction `now()`
+        # returns the SAME value for every call, so user_msg and assistant_msg
+        # would end up with identical created_at and the UI would render them
+        # in non-deterministic order.
+        user_msg = Message(
+            chat_id=chat_id,
+            role="user",
+            content=content,
+            created_at=datetime.now(UTC),
+        )
         self._db.add(user_msg)
         await self._db.flush()
         await self._db.refresh(user_msg)
@@ -107,8 +121,15 @@ class MessageService:
         history = await self._get_messages(chat_id)
         messages = build_context(history, self._context_window)
 
-        # 3. Reserve assistant message row (empty, will update on done)
-        assistant_msg = Message(chat_id=chat_id, role="assistant", content="", aborted=False)
+        # 3. Reserve assistant message row (empty, will update on done).
+        # Explicit timestamp guarantees ordering vs user_msg (see note above).
+        assistant_msg = Message(
+            chat_id=chat_id,
+            role="assistant",
+            content="",
+            aborted=False,
+            created_at=datetime.now(UTC),
+        )
         self._db.add(assistant_msg)
         await self._db.flush()
         await self._db.refresh(assistant_msg)
@@ -233,7 +254,13 @@ class MessageService:
         context_messages = build_context(history, self._context_window)
 
         # Reserve new assistant row
-        assistant_msg = Message(chat_id=chat_id, role="assistant", content="", aborted=False)
+        assistant_msg = Message(
+            chat_id=chat_id,
+            role="assistant",
+            content="",
+            aborted=False,
+            created_at=datetime.now(UTC),
+        )
         self._db.add(assistant_msg)
         await self._db.flush()
         await self._db.refresh(assistant_msg)

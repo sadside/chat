@@ -50,7 +50,11 @@ class ChatService:
 
     async def list_messages(self, chat_id: UUID, user_id: UUID) -> list[Message]:
         await self.get_chat_or_404(chat_id, user_id)
-        stmt = select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at.asc())
+        stmt = (
+            select(Message)
+            .where(Message.chat_id == chat_id)
+            .order_by(Message.created_at.asc(), Message.id.asc())
+        )
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
 

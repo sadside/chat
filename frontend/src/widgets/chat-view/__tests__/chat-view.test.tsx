@@ -34,18 +34,18 @@ const assistantMsg: Message = {
 
 describe('ChatView', () => {
   it('shows empty state when no messages', () => {
-    render(<ChatView messages={[]} />);
+    render(<ChatView messages={[]} chatId="c1" />);
     expect(screen.getByText('С чего начнём?')).toBeInTheDocument();
   });
 
   it('renders user and assistant messages', () => {
-    render(<ChatView messages={[userMsg, assistantMsg]} />);
+    render(<ChatView messages={[userMsg, assistantMsg]} chatId="c1" />);
     expect(screen.getByText('Hello')).toBeInTheDocument();
     expect(screen.getByText('Hi there')).toBeInTheDocument();
   });
 
   it('shows regenerate button on last assistant message', () => {
-    render(<ChatView messages={[userMsg, assistantMsg]} onRegenerate={vi.fn()} />);
+    render(<ChatView messages={[userMsg, assistantMsg]} chatId="c1" onRegenerate={vi.fn()} />);
     // The regen button appears on hover — it's in DOM but opacity-0
     expect(screen.getByLabelText('Сгенерировать снова')).toBeInTheDocument();
   });

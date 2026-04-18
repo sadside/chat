@@ -63,6 +63,7 @@ function ChatPage() {
     <div className="flex h-full flex-col">
       <ChatView
         messages={messages}
+        chatId={chatId}
         onRegenerate={regenerate}
         onExamplePrompt={(p) => send(p)}
       />

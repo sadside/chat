@@ -70,12 +70,16 @@ export function useStreamChat(chatId: string) {
               case 'assistant_done': {
                 const data: SseAssistantDoneEvent = JSON.parse(ev.data);
                 store.finishStream(data.content, data.aborted);
-                // After 1500ms: invalidate queries so sidebar title + message
-                // list reflect the DB state (including auto-title update).
+                // Messages are already persisted on the server — refetch
+                // immediately and reset the streaming overlay only after the
+                // refetch resolves, so the UI never flashes empty.
+                qc.invalidateQueries({ queryKey: messageKeys.list(chatId) })
+                  .then(() => store.reset())
+                  .catch(() => store.reset());
+                // Auto-title generation runs in the background; give it ~1.5s
+                // to update chat.title before refreshing the sidebar.
                 setTimeout(() => {
-                  qc.invalidateQueries({ queryKey: messageKeys.list(chatId) });
                   qc.invalidateQueries({ queryKey: chatKeys.list() });
-                  store.reset();
                 }, 1500);
                 break;
               }
@@ -96,10 +100,11 @@ export function useStreamChat(chatId: string) {
             // If stream closed without assistant_done (abort), finalize.
             if (store.status === 'streaming' || store.status === 'stopping') {
               store.finishStream(store.assistantContent, true);
+              qc.invalidateQueries({ queryKey: messageKeys.list(chatId) })
+                .then(() => store.reset())
+                .catch(() => store.reset());
               setTimeout(() => {
-                qc.invalidateQueries({ queryKey: messageKeys.list(chatId) });
                 qc.invalidateQueries({ queryKey: chatKeys.list() });
-                store.reset();
               }, 1500);
             }
           },
