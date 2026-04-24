@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
+import time
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from uuid import UUID
@@ -12,14 +12,16 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.core.exceptions import NotFoundError
+from app.core.logging import get_logger
 from app.db.models import Chat, Message
 from app.db.session import AsyncSessionLocal
 from app.services.context_builder import build_context
 from app.services.llm_client import LlmClient
 from app.services.title_generator import generate_title
 
-logger = logging.getLogger(__name__)
+_log = get_logger("app.messages")
 
 # SSE headers expected by callers:
 SSE_HEADERS = {
@@ -91,6 +93,13 @@ class MessageService:
             yield _sse("error", {"code": exc.code, "message": exc.message})
             return
 
+        _log.info(
+            "request.validate_start",
+            userId=str(user_id),
+            chatId=str(chat_id),
+            contentLen=len(content),
+        )
+
         # 1. Save user message.
         # IMPORTANT: pass an explicit Python-side timestamp instead of relying on
         # server_default=func.now(). Inside one Postgres transaction `now()`
@@ -106,6 +115,13 @@ class MessageService:
         self._db.add(user_msg)
         await self._db.flush()
         await self._db.refresh(user_msg)
+
+        _log.info(
+            "message.user_saved",
+            userId=str(user_id),
+            chatId=str(chat_id),
+            messageId=str(user_msg.id),
+        )
 
         yield _sse(
             "user_message",
@@ -140,6 +156,15 @@ class MessageService:
         accumulated: list[str] = []
         aborted = False
 
+        settings = get_settings()
+        _log.info(
+            "llm.call_start",
+            source="llm",
+            chatId=str(chat_id),
+            model=settings.vllm_model,
+        )
+        llm_started = time.perf_counter()
+
         try:
             async for delta in self._llm.stream(
                 messages,
@@ -153,7 +178,13 @@ class MessageService:
             raise
         except Exception as exc:
             # LlmUnavailableError or unexpected — emit error event, persist empty partial
-            logger.error("LLM streaming error: %s", exc)
+            _log.error(
+                "llm.call_failed",
+                source="llm",
+                chatId=str(chat_id),
+                error=str(exc),
+                durationMs=round((time.perf_counter() - llm_started) * 1000, 2),
+            )
             yield _sse("error", {"code": "LLM_UNAVAILABLE", "message": str(exc)})
             # persist partial (may be empty) without aborted flag
             await self._persist_assistant_fresh(
@@ -190,6 +221,12 @@ class MessageService:
                 return  # noqa: B012
 
         # 5. Persist completed assistant message
+        _log.info(
+            "llm.call_end",
+            source="llm",
+            chatId=str(chat_id),
+            durationMs=round((time.perf_counter() - llm_started) * 1000, 2),
+        )
         full_content = "".join(accumulated)
         assistant_msg.content = full_content
         assistant_msg.aborted = False
@@ -204,6 +241,12 @@ class MessageService:
             update(ChatModel).where(ChatModel.id == chat_id).values(updated_at=datetime.now(UTC))
         )
         await self._db.flush()
+
+        _log.info(
+            "message.assistant_saved",
+            chatId=str(chat_id),
+            messageId=str(assistant_msg.id),
+        )
 
         # 6. Fire title generation if this is the first exchange
         exchanges_before = await self._count_exchanges_before(chat_id, user_msg.id)
@@ -270,6 +313,16 @@ class MessageService:
         accumulated: list[str] = []
         aborted = False
 
+        settings = get_settings()
+        _log.info(
+            "llm.call_start",
+            source="llm",
+            chatId=str(chat_id),
+            model=settings.vllm_model,
+            regenerate=True,
+        )
+        llm_started = time.perf_counter()
+
         try:
             async for delta in self._llm.stream(
                 context_messages,
@@ -282,7 +335,14 @@ class MessageService:
             aborted = True
             raise
         except Exception as exc:
-            logger.error("LLM regenerate error: %s", exc)
+            _log.error(
+                "llm.call_failed",
+                source="llm",
+                chatId=str(chat_id),
+                error=str(exc),
+                regenerate=True,
+                durationMs=round((time.perf_counter() - llm_started) * 1000, 2),
+            )
             yield _sse("error", {"code": "LLM_UNAVAILABLE", "message": str(exc)})
             await self._persist_assistant_fresh(
                 chat_id, assistant_msg.id, "".join(accumulated), aborted=False
@@ -303,6 +363,13 @@ class MessageService:
                     await fresh.commit()
                 return  # noqa: B012
 
+        _log.info(
+            "llm.call_end",
+            source="llm",
+            chatId=str(chat_id),
+            regenerate=True,
+            durationMs=round((time.perf_counter() - llm_started) * 1000, 2),
+        )
         full_content = "".join(accumulated)
         assistant_msg.content = full_content
         assistant_msg.aborted = False
@@ -316,6 +383,13 @@ class MessageService:
             update(ChatModel).where(ChatModel.id == chat_id).values(updated_at=datetime.now(UTC))
         )
         await self._db.flush()
+
+        _log.info(
+            "message.assistant_saved",
+            chatId=str(chat_id),
+            messageId=str(assistant_msg.id),
+            regenerate=True,
+        )
 
         yield _sse(
             "assistant_done",
