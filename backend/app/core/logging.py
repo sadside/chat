@@ -11,14 +11,13 @@ from structlog.types import FilteringBoundLogger
 def configure_logging(level: str = "INFO", json_logs: bool = False) -> None:
     level_int = getattr(logging, level.upper(), logging.INFO)
 
-    timestamper = structlog.processors.TimeStamper(fmt="iso", utc=True)
-
     shared_processors: list[Any] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
-        timestamper,
+        structlog.processors.TimeStamper(fmt="iso", utc=True, key="@timestamp"),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        structlog.processors.EventRenamer("msg"),
     ]
 
     if json_logs:
@@ -27,7 +26,10 @@ def configure_logging(level: str = "INFO", json_logs: bool = False) -> None:
         renderer = structlog.dev.ConsoleRenderer(colors=sys.stdout.isatty())
 
     structlog.configure(
-        processors=[*shared_processors, renderer],
+        processors=[
+            *shared_processors,
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
         wrapper_class=structlog.make_filtering_bound_logger(level_int),
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
