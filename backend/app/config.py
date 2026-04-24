@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     app_port: int = 8080
     # Stored as raw comma-separated string; parsed into list via computed_field
     app_cors_origins_raw: str = Field(default="", alias="app_cors_origins", exclude=True)
+    log_level: str = "INFO"
+    log_format: Literal["json", "console"] = "json"
 
     # Database
     database_url: str

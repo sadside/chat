@@ -15,10 +15,7 @@ from app.core.rate_limit import limiter
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    configure_logging(
-        level="DEBUG" if settings.app_env == "development" else "INFO",
-        json_logs=settings.app_env == "production",
-    )
+    configure_logging(level=settings.log_level, json_logs=settings.log_format == "json")
 
     app = FastAPI(
         title="Nova API",
