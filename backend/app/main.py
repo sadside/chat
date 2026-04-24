@@ -10,6 +10,7 @@ from app.api.v1.router import api_router
 from app.config import get_settings
 from app.core.exceptions import AppException
 from app.core.logging import configure_logging, get_logger
+from app.core.middleware import TraceMiddleware
 from app.core.rate_limit import limiter
 
 
@@ -42,6 +43,12 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # TraceMiddleware must be added LAST so it becomes the OUTERMOST layer
+    # (Starlette applies add_middleware in LIFO order). This guarantees that
+    # request.start / request.end instrument the full stack including CORS
+    # and rate-limit middlewares.
+    app.add_middleware(TraceMiddleware)
 
     @app.exception_handler(AppException)
     async def app_exception_handler(_: Request, exc: AppException) -> JSONResponse:
