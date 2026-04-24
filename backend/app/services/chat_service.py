@@ -9,8 +9,11 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
+from app.core.logging import get_logger
 from app.db.models import Chat, Message
 from app.schemas.chat import ChatUpdateIn
+
+_log = get_logger("app.chats")
 
 
 class ChatService:
@@ -27,6 +30,7 @@ class ChatService:
         self._db.add(chat)
         await self._db.flush()
         await self._db.refresh(chat)
+        _log.info("chat.created", chatId=str(chat.id), userId=str(user_id))
         return chat
 
     async def get_chat_or_404(self, chat_id: UUID, user_id: UUID) -> Chat:
@@ -42,11 +46,13 @@ class ChatService:
         chat.updated_at = datetime.now(UTC)
         await self._db.flush()
         await self._db.refresh(chat)
+        _log.info("chat.renamed", chatId=str(chat_id), userId=str(user_id))
         return chat
 
     async def delete_chat(self, chat_id: UUID, user_id: UUID) -> None:
         await self.get_chat_or_404(chat_id, user_id)
         await self._db.execute(delete(Chat).where(Chat.id == chat_id))
+        _log.info("chat.deleted", chatId=str(chat_id), userId=str(user_id))
 
     async def list_messages(self, chat_id: UUID, user_id: UUID) -> list[Message]:
         await self.get_chat_or_404(chat_id, user_id)
