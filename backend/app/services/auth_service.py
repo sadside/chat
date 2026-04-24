@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestError, RateLimitError
+from app.core.logging import get_logger
 from app.core.security import encode_access_token
 from app.db.models import OtpCode, User
 from app.services.email.base import EmailSender
 from app.services.otp_service import generate_code, hash_code, verify_code
+
+_log = get_logger("app.auth")
+
+
+def _email_hash(email: str) -> str:
+    return hashlib.sha256(email.lower().encode("utf-8")).hexdigest()[:16]
 
 
 class AuthService:
@@ -46,6 +54,7 @@ class AuthService:
 
     async def request_otp(self, *, email: str) -> None:
         email = self._normalize_email(email)
+        _log.info("auth.otp_request_start", emailHash=_email_hash(email))
         await self._check_rate_limit(email)
 
         code = generate_code(length=self._code_length)
@@ -58,6 +67,7 @@ class AuthService:
         await self._session.flush()
 
         await self._sender.send_otp(to=email, code=code)
+        _log.info("auth.otp_request_ok", emailHash=_email_hash(email))
 
     async def _check_rate_limit(self, email: str) -> None:
         since = datetime.now(tz=UTC) - self._request_window
@@ -71,24 +81,50 @@ class AuthService:
         )
         count = (await self._session.execute(stmt)).scalar_one()
         if count >= self._request_limit:
+            _log.warning(
+                "auth.otp_request_failed",
+                emailHash=_email_hash(email),
+                reason="rate_limited",
+            )
             raise RateLimitError("Too many OTP requests. Try again later.")
 
     async def verify_otp(self, *, email: str, code: str) -> tuple[str, User]:
         email = self._normalize_email(email)
+        _log.info("auth.otp_verify_start", emailHash=_email_hash(email))
 
         otp = await self._get_active_otp(email)
         if otp is None:
+            _log.warning(
+                "auth.otp_verify_failed",
+                emailHash=_email_hash(email),
+                reason="no_active_otp",
+            )
             raise BadRequestError("No active OTP for this email")
 
         if otp.attempts >= self._max_attempts:
+            _log.warning(
+                "auth.otp_verify_failed",
+                emailHash=_email_hash(email),
+                reason="max_attempts",
+            )
             raise BadRequestError("Too many attempts. Request a new code.")
 
         if datetime.now(tz=UTC) >= otp.expires_at:
+            _log.warning(
+                "auth.otp_verify_failed",
+                emailHash=_email_hash(email),
+                reason="expired",
+            )
             raise BadRequestError("OTP expired. Request a new code.")
 
         if not verify_code(code, otp.code_hash, pepper=self._pepper):
             otp.attempts += 1
             await self._session.flush()
+            _log.warning(
+                "auth.otp_verify_failed",
+                emailHash=_email_hash(email),
+                reason="invalid_code",
+            )
             raise BadRequestError("Invalid code")
 
         otp.consumed_at = datetime.now(tz=UTC)
@@ -101,6 +137,11 @@ class AuthService:
             secret=self._jwt_secret,
             algorithm=self._jwt_algorithm,
             ttl=self._jwt_ttl,
+        )
+        _log.info(
+            "auth.otp_verify_ok",
+            emailHash=_email_hash(email),
+            userId=str(user.id),
         )
         return token, user
 
