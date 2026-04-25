@@ -32,6 +32,40 @@ window.addEventListener('beforeunload', () => {
   clientLogger.flushSync();
 });
 
+const _origConsoleError = console.error.bind(console);
+console.error = (...args: unknown[]) => {
+  _origConsoleError(...args);
+  clientLogger.log('error', 'console.error', {
+    traceId: newTraceId(),
+    args: args
+      .map((a) => {
+        if (a instanceof Error) return a.message;
+        if (typeof a === 'object') {
+          try {
+            return JSON.stringify(a);
+          } catch {
+            return String(a);
+          }
+        }
+        return String(a);
+      })
+      .join(' ')
+      .slice(0, 1000),
+  });
+};
+
+const _origConsoleWarn = console.warn.bind(console);
+console.warn = (...args: unknown[]) => {
+  _origConsoleWarn(...args);
+  clientLogger.log('warn', 'console.warn', {
+    traceId: newTraceId(),
+    args: args
+      .map((a) => (a instanceof Error ? a.message : typeof a === 'object' ? JSON.stringify(a) : String(a)))
+      .join(' ')
+      .slice(0, 1000),
+  });
+};
+
 createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
