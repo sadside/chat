@@ -1,5 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
+import { clientLogger, newTraceId } from '@/shared/logger';
 
 export const router = createRouter({
   routeTree,
@@ -11,3 +12,10 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 }
+
+router.subscribe('onResolved', ({ toLocation }) => {
+  clientLogger.log('info', 'nav', {
+    traceId: newTraceId(),
+    route: toLocation?.pathname ?? router.state.location.pathname,
+  });
+});
