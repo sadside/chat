@@ -266,6 +266,83 @@ advanced-logging/
 
 ---
 
+## Интеграция с чатом Nova
+
+Чат-приложение из корня репозитория (`backend/`, `frontend/`) логирует в тот
+же ELK-стек через Filebeat. `traceId` коррелирует фронт → бек → LLM в одной
+записи.
+
+### Архитектура связки
+
+```
+┌────────────────┐     X-Trace-Id    ┌─────────────────┐
+│  Frontend      │ ────────────────► │  FastAPI bek    │
+│  (clientLogger │  X-Trace-Id       │  structlog→JSON │
+│   batch+flush) │ ─POST /_telemetry │  →stdout        │
+│                │  /logs──────────► │                 │
+└────────────────┘                   └────────┬────────┘
+                                              │ docker stdout
+                                              ▼
+                                     ┌─────────────────┐
+                                     │  Filebeat       │
+                                     │  (label=elk     │
+                                     │   autodiscover) │
+                                     └────────┬────────┘
+                                              │ beats:5044
+                                              ▼
+                          Logstash → Elasticsearch (logstash-*)
+                                  │
+                          ┌───────┴────────┐
+                          ▼                ▼
+                       Kibana          Grafana
+                                       (Nova Overview,
+                                        Nova Trace Explorer)
+```
+
+### Запуск (две стека, чёткий порядок)
+
+```bash
+# 1. Поднять ELK-стек — он создаст docker network "elk"
+docker compose -f lab/docker-elk-main/docker-compose.yml up -d
+
+# 2. Поднять чат — он подключится к network elk по метке logging=elk
+docker compose -f docker-compose.yml up -d
+```
+
+Если сеть `elk` уже занята старым именем (например `docker-elk-main_elk`),
+сначала: `docker compose -f lab/docker-elk-main/docker-compose.yml down && docker network rm docker-elk-main_elk`.
+
+### Проверка
+
+1. Открыть http://localhost:5173, залогиниться (письмо с OTP — http://localhost:8025), отправить сообщение в любой чат.
+2. **Kibana** http://localhost:5601 → Discover → паттерн `logstash-*`:
+   - `source:backend` — записи FastAPI (`request.start`, `request.end`, `auth.*`, `chat.*`, `message.*`)
+   - `source:frontend` — записи браузера (`nav`, `user.login`, `user.message_send`, `api.error`, `unhandled.*`)
+   - `source:llm` — вызовы модели (`llm.call_start`, `llm.call_end` с `durationMs`)
+3. Скопировать любой `traceId` из любой записи в Kibana.
+4. **Grafana** http://localhost:3000 (admin/admin) → Dashboards → Nova:
+   - **Overview** — req/sec, error count, p95 `durationMs`, разбивка по уровням, топ ошибок.
+   - **Trace Explorer** — вставить traceId в переменную сверху → увидеть всю цепочку событий одной операции в хронологическом порядке.
+
+### Что искать в `traceId`-цепочке
+
+Для типичного `POST /api/v1/chats/{id}/messages` ожидаемая последовательность под одним traceId:
+
+```
+user.message_send       (frontend)
+request.start           (backend, method=POST, path=/api/v1/chats/.../messages)
+request.validate_start  (backend)
+message.user_saved      (backend)
+llm.call_start          (source=llm)
+llm.call_end            (source=llm, durationMs=...)
+message.assistant_saved (backend)
+request.end             (backend, status=200, durationMs=...)
+```
+
+Если что-то ломается, в этой же ленте увидишь либо `llm.call_failed` (с `error`), либо `unhandled_exception` (с stack trace), либо `api.error` от фронта.
+
+---
+
 ## Полезные команды
 
 ```bash
