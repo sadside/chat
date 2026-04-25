@@ -46,6 +46,11 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+    labels:
+      logging: "elk"
+    networks:
+      - default
+      - elk
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -65,3 +70,8 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  elk:
+    external: true
+    name: elk
