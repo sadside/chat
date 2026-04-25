@@ -110,6 +110,24 @@ services:
 #    depends_on:
 #      - logstash
 
+  filebeat:
+    build:
+      context: extensions/filebeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    user: root
+    command:
+      - -e
+      - --strict.perms=false
+    volumes:
+      - ./extensions/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - elk
+    depends_on:
+      - logstash
+
   grafana:
     image: grafana/grafana-oss:8.5.2
     pull_policy: always
@@ -131,6 +149,7 @@ services:
 
 networks:
   elk:
+    name: elk
     driver: bridge
 
 volumes:
