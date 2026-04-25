@@ -5,6 +5,7 @@ import { useStreamStore } from '@/shared/store/stream-store';
 import { chatKeys } from '@/entities/chat/queries';
 import { messageKeys } from '@/entities/message/queries';
 import { getApiBase } from '@/shared/config/env';
+import { clientLogger, newTraceId } from '@/shared/logger';
 import type {
   SseUserMessageEvent,
   SseAssistantStartEvent,
@@ -35,6 +36,13 @@ export function startMessageStream(options: {
     return Promise.reject(new Error(`Message too long (max ${MAX_CONTENT_LENGTH} chars)`));
   }
 
+  const traceId = newTraceId();
+  clientLogger.log('info', 'user.message_send', {
+    traceId,
+    chatId,
+    contentLen: content.length,
+  });
+
   const store = useStreamStore.getState();
   if (store.status === 'streaming') return Promise.resolve();
   store.startStream(chatId, content);
@@ -53,7 +61,7 @@ export function startMessageStream(options: {
 
   return fetchEventSource(`${getApiBase()}/chats/${chatId}/messages`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Trace-Id': traceId },
     body: JSON.stringify({ content }),
     credentials: 'include',
     ...(signal ? { signal } : {}),

@@ -5,6 +5,7 @@ import { useStreamStore } from '@/shared/store/stream-store';
 import { chatKeys } from '@/entities/chat/queries';
 import { messageKeys } from '@/entities/message/queries';
 import { getApiBase } from '@/shared/config/env';
+import { clientLogger, newTraceId } from '@/shared/logger';
 import type {
   SseAssistantStartEvent,
   SseDeltaEvent,
@@ -20,6 +21,12 @@ export function useRegenerateMessage(chatId: string) {
   const regenerate = useCallback(async () => {
     if (store.status === 'streaming') return;
 
+    const traceId = newTraceId();
+    clientLogger.log('info', 'user.regenerate', {
+      traceId,
+      chatId,
+    });
+
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -30,7 +37,7 @@ export function useRegenerateMessage(chatId: string) {
     try {
       await fetchEventSource(`${getApiBase()}/chats/${chatId}/regenerate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Trace-Id': traceId },
         credentials: 'include',
         signal: controller.signal,
         openWhenHidden: true,

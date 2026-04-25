@@ -6,6 +6,7 @@ import { useRequestOtpMutation, useVerifyOtpMutation } from './api';
 import { useAuthStore } from '@/shared/store/auth-store';
 import { ME_QUERY_KEY } from '@/entities/user/api';
 import { toast } from '@/shared/ui/toast';
+import { clientLogger, newTraceId } from '@/shared/logger';
 
 export type OtpStage = 'email-input' | 'code-input' | 'success';
 
@@ -76,6 +77,10 @@ export function useOtpFlow() {
     try {
       const user = await verifyOtp.mutateAsync({ email, code });
       setUser(user);
+      clientLogger.log('info', 'user.login', {
+        traceId: newTraceId(),
+        userId: user.id,
+      });
       qc.setQueryData(ME_QUERY_KEY, user);
       setStage('success');
       await navigate({ to: '/' });
