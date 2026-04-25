@@ -1,0 +1,44 @@
+{
+  "title": "Nova — Trace Explorer",
+  "uid": "nova-trace-explorer",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "refresh": "",
+  "templating": {
+    "list": [
+      {
+        "name": "traceId",
+        "type": "textbox",
+        "label": "traceId",
+        "query": "",
+        "current": { "text": "", "value": "" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Trace — $traceId",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 24 },
+      "datasource": { "type": "elasticsearch", "uid": "elasticsearch" },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "sortOrder": "Ascending",
+        "dedupStrategy": "none"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "traceId:\"$traceId\"",
+          "metrics": [{ "type": "logs", "id": "1" }],
+          "bucketAggs": []
+        }
+      ]
+    }
+  ]
+}
