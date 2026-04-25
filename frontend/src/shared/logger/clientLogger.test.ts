@@ -17,7 +17,7 @@ describe('clientLogger', () => {
     logger.log('info', 'a', { traceId: 'tid-1' });
     logger.log('info', 'b', { traceId: 'tid-2' });
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
-    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body as string);
     expect(body.records).toHaveLength(2);
     expect(body.records[0].msg).toBe('a');
   });
