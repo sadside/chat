@@ -52,6 +52,16 @@ def configure_logging(level: str = "INFO", json_logs: bool = False) -> None:
     root.handlers = [handler]
     root.setLevel(level_int)
 
+    # Reroute named third-party loggers (uvicorn, sqlalchemy) through the root
+    # handler so their startup/error messages also come out as JSON instead of
+    # uvicorn's default `INFO:     ...` text format (which filebeat then fails
+    # to parse as JSON and pollutes the index with `error.message: parsing
+    # input as JSON: invalid character 'I' ...`).
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access", "sqlalchemy.engine"):
+        lg = logging.getLogger(name)
+        lg.handlers = []
+        lg.propagate = True
+
 
 def get_logger(name: str | None = None) -> FilteringBoundLogger:
     return structlog.get_logger(name)
