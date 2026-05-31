@@ -69,6 +69,7 @@ function ChatPage() {
           onStop={stop}
           isStreaming={isStreaming}
           disabled={status === 'error'}
+          draftKey={chatId}
         />
         {status === 'error' && (
           <div className="mt-2 flex items-center justify-center gap-3">
