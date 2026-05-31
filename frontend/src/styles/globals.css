@@ -15,29 +15,29 @@
   --color-brand-800: oklch(0.34 0.14 264);
   --color-brand-900: oklch(0.27 0.10 264);
 
-  /* Semantic tokens — light mode defaults */
-  --color-background: oklch(0.99 0.005 85);
-  --color-foreground: oklch(0.13 0.02 264);
-  --color-sidebar: oklch(0.96 0.005 85);
-  --color-card: oklch(0.97 0.005 85);
-  --color-card-foreground: oklch(0.13 0.02 264);
-  --color-popover: oklch(0.97 0.005 85);
-  --color-popover-foreground: oklch(0.13 0.02 264);
-  --color-primary: oklch(0.50 0.22 270);
-  --color-primary-foreground: oklch(0.99 0 0);
-  --color-secondary: oklch(0.94 0.01 264);
-  --color-secondary-foreground: oklch(0.27 0.10 264);
-  --color-muted: oklch(0.94 0.01 264);
-  --color-muted-foreground: oklch(0.50 0.03 264);
-  --color-accent: oklch(0.94 0.01 264);
-  --color-accent-foreground: oklch(0.27 0.10 264);
+  /* Semantic tokens — Nova Studio light mode (warm paper) */
+  --color-background: oklch(0.99 0.003 80);
+  --color-foreground: oklch(0.20 0.012 270);
+  --color-sidebar: oklch(0.97 0.004 80);
+  --color-card: oklch(0.98 0.003 80);
+  --color-card-foreground: oklch(0.20 0.012 270);
+  --color-popover: oklch(0.99 0.003 80);
+  --color-popover-foreground: oklch(0.20 0.012 270);
+  --color-primary: oklch(0.55 0.20 280);
+  --color-primary-foreground: oklch(0.99 0.003 80);
+  --color-secondary: oklch(0.96 0.005 270);
+  --color-secondary-foreground: oklch(0.20 0.012 270);
+  --color-muted: oklch(0.96 0.005 270);
+  --color-muted-foreground: oklch(0.45 0.012 270);
+  --color-accent: oklch(0.96 0.005 270);
+  --color-accent-foreground: oklch(0.20 0.012 270);
   --color-accent-alt: oklch(0.55 0.18 175);
-  --color-destructive: oklch(0.54 0.22 27);
-  --color-destructive-foreground: oklch(0.99 0 0);
-  --color-border: oklch(0.89 0.01 264);
-  --color-border-soft: oklch(0.92 0.008 264);
-  --color-input: oklch(0.89 0.01 264);
-  --color-ring: oklch(0.56 0.21 270);
+  --color-destructive: oklch(0.60 0.22 25);
+  --color-destructive-foreground: oklch(0.99 0.003 80);
+  --color-border: oklch(0.92 0.005 270);
+  --color-border-soft: oklch(0.95 0.004 270);
+  --color-input: oklch(0.92 0.005 270);
+  --color-ring: oklch(0.55 0.20 280);
 
   /* Radius */
   --radius: 0.625rem;
@@ -47,30 +47,30 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Dark mode overrides — applied when <html class="dark"> */
+/* Dark mode overrides — Nova Studio (cool blue-black) */
 .dark {
-  --color-background: oklch(0.145 0.015 264);
-  --color-foreground: oklch(0.97 0.01 264);
-  --color-sidebar: oklch(0.11 0.02 264);
-  --color-card: oklch(0.17 0.02 264);
-  --color-card-foreground: oklch(0.97 0.01 264);
-  --color-popover: oklch(0.18 0.02 264);
-  --color-popover-foreground: oklch(0.97 0.01 264);
-  --color-primary: oklch(0.68 0.17 270);
-  --color-primary-foreground: oklch(0.13 0.02 264);
-  --color-secondary: oklch(0.22 0.03 264);
-  --color-secondary-foreground: oklch(0.87 0.03 264);
-  --color-muted: oklch(0.22 0.03 264);
-  --color-muted-foreground: oklch(0.60 0.04 264);
-  --color-accent: oklch(0.22 0.03 264);
-  --color-accent-foreground: oklch(0.87 0.03 264);
-  --color-accent-alt: oklch(0.65 0.15 175);
-  --color-destructive: oklch(0.60 0.20 27);
-  --color-destructive-foreground: oklch(0.97 0 0);
-  --color-border: oklch(0.25 0.03 264);
-  --color-border-soft: oklch(0.20 0.025 264);
-  --color-input: oklch(0.25 0.03 264);
-  --color-ring: oklch(0.68 0.17 270);
+  --color-background: oklch(0.16 0.012 270);
+  --color-foreground: oklch(0.96 0.005 270);
+  --color-sidebar: oklch(0.14 0.012 270);
+  --color-card: oklch(0.19 0.012 270);
+  --color-card-foreground: oklch(0.96 0.005 270);
+  --color-popover: oklch(0.21 0.012 270);
+  --color-popover-foreground: oklch(0.96 0.005 270);
+  --color-primary: oklch(0.65 0.20 280);
+  --color-primary-foreground: oklch(0.16 0.012 270);
+  --color-secondary: oklch(0.22 0.012 270);
+  --color-secondary-foreground: oklch(0.96 0.005 270);
+  --color-muted: oklch(0.22 0.012 270);
+  --color-muted-foreground: oklch(0.74 0.012 270);
+  --color-accent: oklch(0.22 0.012 270);
+  --color-accent-foreground: oklch(0.96 0.005 270);
+  --color-accent-alt: oklch(0.70 0.15 175);
+  --color-destructive: oklch(0.68 0.22 25);
+  --color-destructive-foreground: oklch(0.96 0.005 270);
+  --color-border: oklch(0.28 0.012 270);
+  --color-border-soft: oklch(0.24 0.012 270);
+  --color-input: oklch(0.28 0.012 270);
+  --color-ring: oklch(0.65 0.20 280);
 }
 
 @layer base {
