@@ -100,3 +100,28 @@ export const useStreamStore = create<StreamState>()(
     },
   }))
 );
+
+// Module-level singleton: tracks the in-flight stream's AbortController so
+// a *new* stream can cancel the previous one when the user navigates between
+// chats mid-stream. Kept outside zustand state because AbortController is not
+// serializable and we don't want it triggering re-renders.
+let _activeController: AbortController | null = null;
+
+export function setActiveController(c: AbortController | null): void {
+  _activeController = c;
+}
+
+export function getActiveController(): AbortController | null {
+  return _activeController;
+}
+
+export function abortActiveStream(reason: string = 'superseded'): void {
+  if (_activeController) {
+    try {
+      _activeController.abort(reason);
+    } catch {
+      /* noop */
+    }
+    _activeController = null;
+  }
+}

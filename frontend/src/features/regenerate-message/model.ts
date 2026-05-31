@@ -1,7 +1,12 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { useQueryClient } from '@tanstack/react-query';
-import { useStreamStore } from '@/shared/store/stream-store';
+import {
+  useStreamStore,
+  setActiveController,
+  getActiveController,
+  abortActiveStream,
+} from '@/shared/store/stream-store';
 import { chatKeys } from '@/entities/chat/queries';
 import { messageKeys } from '@/entities/message/queries';
 import { getApiBase } from '@/shared/config/env';
@@ -14,7 +19,6 @@ import type {
 } from '@/entities/message/types';
 
 export function useRegenerateMessage(chatId: string) {
-  const abortRef = useRef<AbortController | null>(null);
   const qc = useQueryClient();
   const store = useStreamStore();
 
@@ -27,12 +31,15 @@ export function useRegenerateMessage(chatId: string) {
       chatId,
     });
 
+    abortActiveStream();
     const controller = new AbortController();
-    abortRef.current = controller;
+    setActiveController(controller);
 
     // Clear stream store and indicate streaming with no optimistic user msg
     store.startStream(chatId, '');
     useStreamStore.setState((s) => { s.optimisticUserMessage = null; });
+
+    const isStillActive = () => useStreamStore.getState().chatId === chatId;
 
     try {
       await fetchEventSource(`${getApiBase()}/chats/${chatId}/regenerate`, {
@@ -47,6 +54,8 @@ export function useRegenerateMessage(chatId: string) {
         },
 
         onmessage: (ev) => {
+          if (useStreamStore.getState().chatId !== chatId) return;
+
           switch (ev.event) {
             case 'assistant_start': {
               const d: SseAssistantStartEvent = JSON.parse(ev.data);
@@ -61,11 +70,13 @@ export function useRegenerateMessage(chatId: string) {
             case 'assistant_done': {
               const d: SseAssistantDoneEvent = JSON.parse(ev.data);
               store.finishStream(d.content, d.aborted);
-              setTimeout(() => {
-                qc.invalidateQueries({ queryKey: messageKeys.list(chatId) });
-                qc.invalidateQueries({ queryKey: chatKeys.list() });
-                store.reset();
-              }, 1500);
+              if (isStillActive()) {
+                setTimeout(() => {
+                  qc.invalidateQueries({ queryKey: messageKeys.list(chatId) });
+                  qc.invalidateQueries({ queryKey: chatKeys.list() });
+                  store.reset();
+                }, 1500);
+              }
               break;
             }
             case 'error': {
@@ -84,11 +95,13 @@ export function useRegenerateMessage(chatId: string) {
         onclose: () => {
           if (store.status === 'streaming' || store.status === 'stopping') {
             store.finishStream(store.assistantContent, true);
-            setTimeout(() => {
-              qc.invalidateQueries({ queryKey: messageKeys.list(chatId) });
-              qc.invalidateQueries({ queryKey: chatKeys.list() });
-              store.reset();
-            }, 1500);
+            if (isStillActive()) {
+              setTimeout(() => {
+                qc.invalidateQueries({ queryKey: messageKeys.list(chatId) });
+                qc.invalidateQueries({ queryKey: chatKeys.list() });
+                store.reset();
+              }, 1500);
+            }
           }
         },
       });
@@ -96,14 +109,17 @@ export function useRegenerateMessage(chatId: string) {
       if ((err as Error)?.name !== 'AbortError') {
         store.setError(err instanceof Error ? err.message : 'Unknown error');
       }
+    } finally {
+      if (getActiveController() === controller) setActiveController(null);
     }
   }, [chatId, store, qc]);
 
   const stop = useCallback(() => {
-    if (abortRef.current) {
-      useStreamStore.setState((s) => { s.status = 'stopping'; });
-      abortRef.current.abort();
-      abortRef.current = null;
+    if (useStreamStore.getState().status === 'streaming') {
+      useStreamStore.setState((s) => {
+        s.status = 'stopping';
+      });
+      abortActiveStream('user');
     }
   }, []);
 
