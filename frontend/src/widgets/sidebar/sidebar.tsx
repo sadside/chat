@@ -35,7 +35,7 @@ export function Sidebar() {
   const currentChatId = match ? match[1] : undefined;
 
   return (
-    <nav className="flex h-full flex-col gap-1 px-2 py-3 bg-[--color-sidebar]">
+    <nav data-tour="sidebar" className="flex h-full flex-col gap-1 px-2 py-3 bg-[--color-sidebar]/80 backdrop-blur-xl">
       {/* New chat button */}
       <Button
         onClick={() => createChat.mutate()}
@@ -80,7 +80,7 @@ export function Sidebar() {
 
       {/* Section label */}
       {results.length > 0 && (
-        <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 select-none">
+        <p className="px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground] select-none">
           Недавнее
         </p>
       )}

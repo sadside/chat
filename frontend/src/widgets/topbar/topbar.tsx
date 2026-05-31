@@ -20,7 +20,7 @@ export function Topbar() {
   const title = data?.title ?? 'Nova';
 
   return (
-    <header className="flex h-12 items-center bg-[--color-background] px-4 shadow-sm">
+    <header className="sticky top-0 z-30 flex h-12 items-center border-b border-[--color-border]/60 bg-[--color-background]/70 px-4 backdrop-blur-xl">
       {isMobile && (
         <Button
           variant="ghost"
