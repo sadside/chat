@@ -16,6 +16,7 @@ import { useMeQuery } from '@/entities/user/api';
 import { useAuthStore } from '@/shared/store/auth-store';
 import { CommandPalette, usePalette } from '@/features/command-palette';
 import { GlobalSearch, useGlobalSearch } from '@/features/global-search';
+import { Onboarding } from '@/features/onboarding';
 import { useHotkey } from '@/shared/hooks/use-hotkey';
 import { useToggleTheme } from '@/features/toggle-theme/use-toggle-theme';
 
@@ -94,6 +95,8 @@ function RootLayout() {
       </div>
       <Toaster />
       <CommandPalette />
+      <GlobalSearch />
+      <Onboarding />
     </ErrorBoundary>
   );
 }

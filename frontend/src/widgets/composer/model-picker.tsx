@@ -21,6 +21,7 @@ export function ModelPicker() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        data-tour="model-picker"
         className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
         aria-label="Выбрать модель"
       >
