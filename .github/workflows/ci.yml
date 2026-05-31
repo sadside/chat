@@ -36,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env (VITE_API_URL is required by env validation)
+        run: cp .env.example .env
+
       - name: Lint (ESLint)
         run: npm run lint
 
