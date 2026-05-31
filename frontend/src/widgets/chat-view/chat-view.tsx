@@ -85,7 +85,11 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
     return result;
   }, [messages, isStreaming, stream, chatId]);
 
-  const { anchorRef } = useAutoScroll([displayMessages.length, stream.assistantContent]);
+  const { anchorRef } = useAutoScroll([
+    displayMessages.length,
+    stream.assistantContent.length,
+    stream.status,
+  ]);
 
   if (messages.length === 0 && !isStreaming) {
     return <EmptyState {...(onExamplePrompt ? { onPromptClick: onExamplePrompt } : {})} />;
@@ -108,8 +112,11 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
             const nextMsg = displayMessages.slice(idx + 1).find((m) => m !== '__divider__') as
               | Message
               | undefined;
+            const dividerKey = nextMsg
+              ? `divider-${new Date(nextMsg.created_at).toDateString()}`
+              : 'divider-end';
             return (
-              <div key={`divider-${idx}`} className="flex items-center gap-3">
+              <div key={dividerKey} className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-xs text-muted-foreground">
                   {nextMsg ? formatDividerDate(nextMsg.created_at) : ''}
