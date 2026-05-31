@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Copy, Check, RefreshCw, ClipboardCopy, Pencil } from 'lucide-react';
 import { MarkdownContent } from '@/shared/ui/markdown-content';
 import { StreamingView } from '@/shared/ui/streaming-view';
+import { ReasoningPanel, splitReasoning } from '@/widgets/chat-view/reasoning-panel';
 import { useCopyToClipboard } from '@/shared/hooks/use-clipboard';
 import { NovaAvatar } from '@/shared/ui/nova-avatar';
 import { Button } from '@/shared/ui/button';
@@ -195,7 +196,15 @@ export function MessageBubble({
           {streaming ? (
             <StreamingView content={message.content} />
           ) : (
-            <MarkdownContent content={message.content} streaming={false} />
+            (() => {
+              const { reasoning, answer } = splitReasoning(message.content);
+              return (
+                <>
+                  {reasoning && <ReasoningPanel content={reasoning} />}
+                  <MarkdownContent content={answer} streaming={false} />
+                </>
+              );
+            })()
           )}
           {message.aborted && (
             <span className="mt-1 block text-xs text-muted-foreground">

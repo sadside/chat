@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { ReasoningPanel, splitReasoning } from '@/widgets/chat-view/reasoning-panel';
 
 interface Props {
   content: string;
@@ -26,27 +27,34 @@ interface Props {
  *  - A blinking caret marks the live cursor position.
  */
 export function StreamingView({ content }: Props) {
-  const segments = useMemo(() => splitOnFences(content), [content]);
+  const { reasoning, answer } = useMemo(() => splitReasoning(content), [content]);
+  const segments = useMemo(() => splitOnFences(answer), [answer]);
+  const showCaret = answer.length > 0 || !reasoning;
 
   return (
-    <div className="relative min-h-[1.5em] whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">
-      {segments.map((seg, i) =>
-        seg.kind === 'code' ? (
-          <pre
-            key={i}
-            className="my-2 overflow-x-auto rounded-lg border border-border bg-muted/60 p-3 font-mono text-[13.5px] leading-relaxed"
-          >
-            <code>{seg.text}</code>
-          </pre>
-        ) : (
-          <span key={i}>{seg.text}</span>
-        ),
-      )}
-      <span
-        aria-hidden="true"
-        className="ml-0.5 inline-block w-[2px] animate-pulse bg-[--color-primary] align-text-bottom"
-        style={{ height: '1.05em' }}
-      />
+    <div>
+      {reasoning && <ReasoningPanel content={reasoning} streaming />}
+      <div className="relative min-h-[1.5em] whitespace-pre-wrap break-words text-[15px] leading-7 text-foreground">
+        {segments.map((seg, i) =>
+          seg.kind === 'code' ? (
+            <pre
+              key={i}
+              className="my-2 overflow-x-auto rounded-lg border border-border bg-muted/60 p-3 font-mono text-[13.5px] leading-relaxed"
+            >
+              <code>{seg.text}</code>
+            </pre>
+          ) : (
+            <span key={i}>{seg.text}</span>
+          ),
+        )}
+        {showCaret && (
+          <span
+            aria-hidden="true"
+            className="ml-0.5 inline-block w-[2px] animate-pulse bg-[--color-primary] align-text-bottom"
+            style={{ height: '1.05em' }}
+          />
+        )}
+      </div>
     </div>
   );
 }

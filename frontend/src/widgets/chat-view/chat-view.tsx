@@ -8,6 +8,7 @@ import { MessageBubble } from './message-bubble';
 import { EmptyState } from './empty-state';
 import { GenerationProgress } from './generation-progress';
 import { ChatSearchBar } from './search-bar';
+import { ThinkingIndicator } from './thinking-indicator';
 import type { Message } from '@/entities/message/types';
 
 interface ChatViewProps {
@@ -174,6 +175,7 @@ export function ChatView({
           </div>
         )}
 
+        {isStreaming && stream.assistantContent.length === 0 && <ThinkingIndicator />}
         <GenerationProgress />
         <div ref={anchorRef} className="h-1" aria-hidden="true" />
       </div>
