@@ -10,7 +10,11 @@ import '@/styles/globals.css';
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('[nova] #root element not found in index.html');
 
-window.addEventListener('error', (ev) => {
+// Named handlers so HMR can detach them on module reload.
+const _origConsoleError = console.error.bind(console);
+const _origConsoleWarn = console.warn.bind(console);
+
+const _onError = (ev: ErrorEvent) => {
   clientLogger.log('error', 'unhandled.error', {
     traceId: newTraceId(),
     message: String(ev.message ?? ''),
@@ -18,22 +22,21 @@ window.addEventListener('error', (ev) => {
     line: Number(ev.lineno ?? 0),
     col: Number(ev.colno ?? 0),
   });
-});
+};
 
-window.addEventListener('unhandledrejection', (ev) => {
+const _onRejection = (ev: PromiseRejectionEvent) => {
   const reason = ev.reason instanceof Error ? ev.reason.message : String(ev.reason);
   clientLogger.log('error', 'unhandled.rejection', {
     traceId: newTraceId(),
     reason,
   });
-});
+};
 
-window.addEventListener('beforeunload', () => {
+const _onBeforeUnload = () => {
   clientLogger.flushSync();
-});
+};
 
-const _origConsoleError = console.error.bind(console);
-console.error = (...args: unknown[]) => {
+const _patchedConsoleError = (...args: unknown[]) => {
   _origConsoleError(...args);
   clientLogger.log('error', 'console.error', {
     traceId: newTraceId(),
@@ -54,8 +57,7 @@ console.error = (...args: unknown[]) => {
   });
 };
 
-const _origConsoleWarn = console.warn.bind(console);
-console.warn = (...args: unknown[]) => {
+const _patchedConsoleWarn = (...args: unknown[]) => {
   _origConsoleWarn(...args);
   clientLogger.log('warn', 'console.warn', {
     traceId: newTraceId(),
@@ -65,6 +67,25 @@ console.warn = (...args: unknown[]) => {
       .slice(0, 1000),
   });
 };
+
+window.addEventListener('error', _onError);
+window.addEventListener('unhandledrejection', _onRejection);
+window.addEventListener('beforeunload', _onBeforeUnload);
+console.error = _patchedConsoleError;
+console.warn = _patchedConsoleWarn;
+
+// Vite HMR may reload this module while the page stays live. Without these
+// disposers each reload would stack a fresh copy of every listener and the
+// console-patch chain would grow without bound.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    window.removeEventListener('error', _onError);
+    window.removeEventListener('unhandledrejection', _onRejection);
+    window.removeEventListener('beforeunload', _onBeforeUnload);
+    console.error = _origConsoleError;
+    console.warn = _origConsoleWarn;
+  });
+}
 
 createRoot(rootElement).render(
   <StrictMode>
