@@ -18,6 +18,11 @@ import { useCreateChat } from '@/features/create-chat';
 import { useRenameChat } from '@/features/rename-chat';
 import { useDeleteChat } from '@/features/delete-chat';
 import { useExportChat } from '@/features/export-chat';
+import { apiClient as api } from '@/shared/api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { chatKeys } from '@/entities/chat/queries';
+import { toast } from '@/shared/ui/toast';
+import { useMemo } from 'react';
 import { cn } from '@/shared/lib/utils';
 
 export function Sidebar() {
@@ -26,7 +31,25 @@ export function Sidebar() {
   const renameChat = useRenameChat();
   const deleteChat = useDeleteChat();
   const { exportChat } = useExportChat();
+  const qc = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+
+  const togglePin = async (id: string, pinned: boolean) => {
+    try {
+      await api.patch(`chats/${id}`, { json: { pinned } });
+      qc.invalidateQueries({ queryKey: chatKeys.list() });
+      toast(pinned ? 'Чат закреплён' : 'Чат откреплён');
+    } catch {
+      toast('Не удалось обновить', 'destructive');
+    }
+  };
+
+  const { pinned, recent } = useMemo(() => {
+    return {
+      pinned: results.filter((c) => c.pinned),
+      recent: results.filter((c) => !c.pinned),
+    };
+  }, [results]);
 
   // Derive currentChatId from pathname without using route-typed useParams,
   // which would require a conditional hook and break the rules-of-hooks.
@@ -78,28 +101,51 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Section label */}
-      {results.length > 0 && (
-        <p className="px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground] select-none">
-          Недавнее
-        </p>
-      )}
-
       {/* Chat list */}
-      <div className="flex-1 overflow-y-auto space-y-0.5">
+      <div className="flex-1 space-y-0.5 overflow-y-auto">
         {results.length === 0 && isFiltering && (
-          <p className="px-3 py-4 text-xs text-muted-foreground text-center">Ничего не найдено</p>
+          <p className="px-3 py-4 text-center text-xs text-[--color-muted-foreground]">
+            Ничего не найдено
+          </p>
         )}
-        {results.map((chat) => (
-          <ChatListItem
-            key={chat.id}
-            chat={chat}
-            isActive={chat.id === currentChatId}
-            onRename={(id, title) => renameChat.mutate({ id, title })}
-            onDelete={(id) => setDeleteTarget({ id, title: chat.title })}
-            onExport={exportChat}
-          />
-        ))}
+
+        {pinned.length > 0 && (
+          <>
+            <p className="select-none px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground]">
+              Закреплённые
+            </p>
+            {pinned.map((chat) => (
+              <ChatListItem
+                key={chat.id}
+                chat={chat}
+                isActive={chat.id === currentChatId}
+                onRename={(id, title) => renameChat.mutate({ id, title })}
+                onDelete={(id) => setDeleteTarget({ id, title: chat.title })}
+                onExport={exportChat}
+                onTogglePin={togglePin}
+              />
+            ))}
+          </>
+        )}
+
+        {recent.length > 0 && (
+          <>
+            <p className="select-none px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground]">
+              Недавнее
+            </p>
+            {recent.map((chat) => (
+              <ChatListItem
+                key={chat.id}
+                chat={chat}
+                isActive={chat.id === currentChatId}
+                onRename={(id, title) => renameChat.mutate({ id, title })}
+                onDelete={(id) => setDeleteTarget({ id, title: chat.title })}
+                onExport={exportChat}
+                onTogglePin={togglePin}
+              />
+            ))}
+          </>
+        )}
       </div>
 
       {/* Delete confirmation dialog */}

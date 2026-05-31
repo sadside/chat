@@ -55,6 +55,10 @@ class Chat(UuidPkMixin, TimestampsMixin, Base):
         index=True,
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False, default="Новый чат")
+    system_prompt: Mapped[str | None] = mapped_column(String(4000), nullable=True)
+    pinned: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", default=False
+    )
 
     user: Mapped[User] = relationship(back_populates="chats")
     messages: Mapped[list[Message]] = relationship(
@@ -76,6 +80,15 @@ class Message(UuidPkMixin, Base):
     role: Mapped[str] = mapped_column(String(16), nullable=False)
     content: Mapped[str] = mapped_column(String, nullable=False)
     aborted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    model_used: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    parent_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("messages.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    branch_index: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0", default=0
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

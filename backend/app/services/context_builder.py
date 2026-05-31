@@ -45,6 +45,7 @@ def build_context(
     context_window: int,
     fill_ratio: float = 0.75,
     system_prompt: str | None = DEFAULT_SYSTEM_PROMPT,
+    chat_system_prompt: str | None = None,
 ) -> list[dict[str, str]]:
     """
     Convert DB Message objects to OpenAI-compatible dicts, truncating from head
@@ -52,26 +53,32 @@ def build_context(
 
     Token estimate: len(content) // 4 (rough char-to-token ratio).
 
-    If the first DB message is a system message, it is preserved AS-IS (the
-    chat owner customised it). Otherwise `system_prompt` is injected at the
-    front so the model always sees baseline instructions (style, language).
+    System message handling:
+    - If `chat_system_prompt` is non-empty, it's appended as a second system
+      message AFTER the default Nova prompt. Lets the user customise a chat's
+      role without losing language/format guarantees.
+    - If the first DB message is itself a system message, that is preserved
+      AS-IS (back-compat for old chats).
+    - Otherwise the default `system_prompt` is injected.
 
     Returns list of {"role": ..., "content": ...} dicts.
     """
     budget = int(context_window * fill_ratio)
 
-    # Separate leading system message
-    system_msg: dict[str, str] | None = None
+    # Build leading system block (1 or 2 messages).
+    system_messages: list[dict[str, str]] = []
     rest: list[Message] = list(messages)
     if rest and rest[0].role == "system":
-        system_msg = {"role": "system", "content": rest[0].content}
+        system_messages.append({"role": "system", "content": rest[0].content})
         rest = rest[1:]
     elif system_prompt:
-        system_msg = {"role": "system", "content": system_prompt}
+        system_messages.append({"role": "system", "content": system_prompt})
+    if chat_system_prompt:
+        system_messages.append({"role": "system", "content": chat_system_prompt})
 
     # Greedily keep from tail until budget exhausted
     kept: list[dict[str, str]] = []
-    used = len(system_msg["content"]) // 4 if system_msg else 0
+    used = sum(len(s["content"]) // 4 for s in system_messages)
 
     for msg in reversed(rest):
         tokens = len(msg.content) // 4
@@ -80,8 +87,4 @@ def build_context(
         kept.insert(0, {"role": msg.role, "content": msg.content})
         used += tokens
 
-    result: list[dict[str, str]] = []
-    if system_msg:
-        result.append(system_msg)
-    result.extend(kept)
-    return result
+    return [*system_messages, *kept]

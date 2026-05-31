@@ -88,7 +88,7 @@ class MessageService:
         CancelledError: partial assistant saved with aborted=True via fresh session.
         """
         try:
-            await self._get_chat_or_404(chat_id, user_id)
+            chat = await self._get_chat_or_404(chat_id, user_id)
         except NotFoundError as exc:
             yield _sse("error", {"code": exc.code, "message": exc.message})
             return
@@ -135,15 +135,22 @@ class MessageService:
 
         # 2. Build context
         history = await self._get_messages(chat_id)
-        messages = build_context(history, self._context_window)
+        messages = build_context(
+            history,
+            self._context_window,
+            chat_system_prompt=chat.system_prompt,
+        )
 
         # 3. Reserve assistant message row (empty, will update on done).
         # Explicit timestamp guarantees ordering vs user_msg (see note above).
+        settings = get_settings()
         assistant_msg = Message(
             chat_id=chat_id,
             role="assistant",
             content="",
             aborted=False,
+            model_used=(model or settings.vllm_model),
+            parent_id=user_msg.id,
             created_at=datetime.now(UTC),
         )
         self._db.add(assistant_msg)
@@ -156,7 +163,6 @@ class MessageService:
         accumulated: list[str] = []
         aborted = False
 
-        settings = get_settings()
         _log.info(
             "llm.call_start",
             source="llm",
@@ -273,7 +279,7 @@ class MessageService:
         Yields same SSE sequence as stream_new_message (minus user_message event).
         """
         try:
-            await self._get_chat_or_404(chat_id, user_id)
+            chat = await self._get_chat_or_404(chat_id, user_id)
         except NotFoundError as exc:
             yield _sse("error", {"code": exc.code, "message": exc.message})
             return
@@ -292,19 +298,40 @@ class MessageService:
             )
             return
 
+        # Find the user message this assistant replied to — the new sibling
+        # will share the same parent.
+        prev_user = next((m for m in reversed(messages_in_db) if m.role == "user"), None)
+        sibling_count = (
+            sum(
+                1
+                for m in messages_in_db
+                if m.role == "assistant" and m.parent_id == (prev_user.id if prev_user else None)
+            )
+            if prev_user is not None
+            else 0
+        )
+
         await self._db.delete(last_assistant)
         await self._db.flush()
 
         # Rebuild history without removed message
         history = await self._get_messages(chat_id)
-        context_messages = build_context(history, self._context_window)
+        context_messages = build_context(
+            history,
+            self._context_window,
+            chat_system_prompt=chat.system_prompt,
+        )
 
         # Reserve new assistant row
+        settings = get_settings()
         assistant_msg = Message(
             chat_id=chat_id,
             role="assistant",
             content="",
             aborted=False,
+            model_used=(model or settings.vllm_model),
+            parent_id=(prev_user.id if prev_user else None),
+            branch_index=sibling_count,
             created_at=datetime.now(UTC),
         )
         self._db.add(assistant_msg)
@@ -316,7 +343,6 @@ class MessageService:
         accumulated: list[str] = []
         aborted = False
 
-        settings = get_settings()
         _log.info(
             "llm.call_start",
             source="llm",
@@ -420,7 +446,7 @@ class MessageService:
         assistant reply and any subsequent exchanges).
         """
         try:
-            await self._get_chat_or_404(chat_id, user_id)
+            chat = await self._get_chat_or_404(chat_id, user_id)
         except NotFoundError as exc:
             yield _sse("error", {"code": exc.code, "message": exc.message})
             return
@@ -458,13 +484,20 @@ class MessageService:
         )
 
         history = await self._get_messages(chat_id)
-        context_messages = build_context(history, self._context_window)
+        context_messages = build_context(
+            history,
+            self._context_window,
+            chat_system_prompt=chat.system_prompt,
+        )
 
+        settings = get_settings()
         assistant_msg = Message(
             chat_id=chat_id,
             role="assistant",
             content="",
             aborted=False,
+            model_used=(model or settings.vllm_model),
+            parent_id=target.id,
             created_at=datetime.now(UTC),
         )
         self._db.add(assistant_msg)
@@ -474,7 +507,6 @@ class MessageService:
 
         accumulated: list[str] = []
         aborted = False
-        settings = get_settings()
         _log.info(
             "llm.call_start",
             source="llm",

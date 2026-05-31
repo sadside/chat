@@ -21,7 +21,11 @@ class ChatService:
         self._db = session
 
     async def list_chats(self, user_id: UUID) -> list[Chat]:
-        stmt = select(Chat).where(Chat.user_id == user_id).order_by(Chat.updated_at.desc())
+        stmt = (
+            select(Chat)
+            .where(Chat.user_id == user_id)
+            .order_by(Chat.pinned.desc(), Chat.updated_at.desc())
+        )
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
 
@@ -41,12 +45,34 @@ class ChatService:
         return chat
 
     async def rename_chat(self, chat_id: UUID, user_id: UUID, data: ChatUpdateIn) -> Chat:
+        """Update mutable chat fields. Method kept as `rename_chat` for backwards
+        compatibility with the existing PATCH route, but now also accepts
+        system_prompt and pinned via the same body."""
         chat = await self.get_chat_or_404(chat_id, user_id)
-        chat.title = data.title
-        chat.updated_at = datetime.now(UTC)
+        touched = False
+        if data.title is not None:
+            chat.title = data.title
+            touched = True
+        if data.system_prompt is not None:
+            chat.system_prompt = data.system_prompt or None
+            touched = True
+        if data.pinned is not None:
+            chat.pinned = data.pinned
+            touched = True
+        if touched:
+            chat.updated_at = datetime.now(UTC)
         await self._db.flush()
         await self._db.refresh(chat)
-        _log.info("chat.renamed", chatId=str(chat_id), userId=str(user_id))
+        _log.info(
+            "chat.updated",
+            chatId=str(chat_id),
+            userId=str(user_id),
+            fields={
+                "title": data.title is not None,
+                "system_prompt": data.system_prompt is not None,
+                "pinned": data.pinned is not None,
+            },
+        )
         return chat
 
     async def delete_chat(self, chat_id: UUID, user_id: UUID) -> None:

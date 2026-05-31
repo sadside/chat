@@ -7,9 +7,9 @@ import type { Chat } from '@/entities/chat/types';
 vi.mock('@/entities/chat/queries', () => ({
   useChatsQuery: () => ({
     data: [
-      { id: '1', title: 'JavaScript basics', created_at: '', updated_at: '' },
-      { id: '2', title: 'Python async', created_at: '', updated_at: '' },
-      { id: '3', title: 'React patterns', created_at: '', updated_at: '' },
+      { id: '1', title: 'JavaScript basics', pinned: false, system_prompt: null, created_at: '', updated_at: '' },
+      { id: '2', title: 'Python async', pinned: false, system_prompt: null, created_at: '', updated_at: '' },
+      { id: '3', title: 'React patterns', pinned: false, system_prompt: null, created_at: '', updated_at: '' },
     ] satisfies Chat[],
   }),
 }));

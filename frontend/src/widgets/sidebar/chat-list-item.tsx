@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { MoreHorizontal, Pencil, Trash2, Download, Check, X } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, Download, Check, X, Pin, PinOff } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { cn } from '@/shared/lib/utils';
 import {
@@ -18,6 +18,7 @@ interface ChatListItemProps {
   onRename: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   onExport: (id: string, title: string) => void;
+  onTogglePin: (id: string, pinned: boolean) => void;
 }
 
 export function ChatListItem({
@@ -26,6 +27,7 @@ export function ChatListItem({
   onRename,
   onDelete,
   onExport,
+  onTogglePin,
 }: ChatListItemProps) {
   const [editMode, setEditMode] = useState(false);
   const [editTitle, setEditTitle] = useState(chat.title);
@@ -89,9 +91,10 @@ export function ChatListItem({
           <Link
             to="/chats/$chatId"
             params={{ chatId: chat.id }}
-            className="flex-1 truncate"
+            className="flex flex-1 items-center gap-1.5 truncate"
           >
-            {chat.title}
+            {chat.pinned && <Pin className="h-3 w-3 shrink-0 text-[--color-primary]" />}
+            <span className="truncate">{chat.title}</span>
           </Link>
 
           <DropdownMenu>
@@ -111,6 +114,14 @@ export function ChatListItem({
               <DropdownMenuItem onClick={startEdit}>
                 <Pencil className="mr-2 h-3.5 w-3.5" />
                 Переименовать
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onTogglePin(chat.id, !chat.pinned)}>
+                {chat.pinned ? (
+                  <PinOff className="mr-2 h-3.5 w-3.5" />
+                ) : (
+                  <Pin className="mr-2 h-3.5 w-3.5" />
+                )}
+                {chat.pinned ? 'Открепить' : 'Закрепить'}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onExport(chat.id, chat.title)}>
                 <Download className="mr-2 h-3.5 w-3.5" />
