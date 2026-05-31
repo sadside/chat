@@ -103,8 +103,7 @@ export function CommandPalette() {
         section: 'Действия',
         run: (cls) => {
           cls();
-          // /stats route is registered separately — bypass type-checked navigate.
-          window.location.assign('/stats');
+          navigate({ to: '/stats' });
         },
         keywords: ['stats', 'статистика'],
       },
