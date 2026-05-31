@@ -1,6 +1,7 @@
-import { Copy, Check, RefreshCw } from 'lucide-react';
+import { Copy, Check, RefreshCw, ClipboardCopy } from 'lucide-react';
 import { MarkdownContent } from '@/shared/ui/markdown-content';
 import { useCopyToClipboard } from '@/shared/hooks/use-clipboard';
+import { toast } from '@/shared/ui/toast';
 import { cn } from '@/shared/lib/utils';
 import type { Message } from '@/entities/message/types';
 
@@ -92,6 +93,7 @@ export function MessageBubble({
             onClick={() => copy(message.content)}
             className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Копировать сообщение"
+            title="Копировать как текст"
           >
             {copied ? (
               <Check className="h-3.5 w-3.5 text-green-500" />
@@ -99,6 +101,22 @@ export function MessageBubble({
               <Copy className="h-3.5 w-3.5" />
             )}
           </button>
+
+          {!isUser && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(message.content).then(
+                  () => toast('Скопировано как Markdown'),
+                  () => toast('Не удалось скопировать', 'destructive'),
+                );
+              }}
+              className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Копировать как Markdown"
+              title="Копировать как Markdown"
+            >
+              <ClipboardCopy className="h-3.5 w-3.5" />
+            </button>
+          )}
 
           {showRegenerateButton && !isUser && onRegenerate && (
             <button
