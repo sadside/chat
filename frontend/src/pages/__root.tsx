@@ -1,4 +1,5 @@
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router';
+import { motion } from 'motion/react';
 import { useEffect } from 'react';
 import {
   Dialog,
@@ -21,7 +22,7 @@ import { useHotkey } from '@/shared/hooks/use-hotkey';
 import { useToggleTheme } from '@/features/toggle-theme/use-toggle-theme';
 
 function RootLayout() {
-  const { sidebarOpen, closeSidebar } = useUiStore();
+  const { sidebarOpen, closeSidebar, desktopCollapsed } = useUiStore();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const { data: meUser } = useMeQuery();
   const { setUser, clearUser } = useAuthStore();
@@ -51,8 +52,8 @@ function RootLayout() {
     }
   }, [meUser, setUser, clearUser]);
 
-  // Auth pages get a minimal layout — no sidebar/topbar
-  if (pathname.startsWith('/auth')) {
+  // Auth + print pages get a minimal layout — no sidebar/topbar
+  if (pathname.startsWith('/auth') || pathname.endsWith('/print')) {
     return (
       <ErrorBoundary>
         <Outlet />
@@ -65,14 +66,21 @@ function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen flex-col overflow-hidden bg-[--color-background] text-[--color-foreground]">
+      <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <Topbar />
         <div className="flex flex-1 overflow-hidden">
-          {/* Desktop sidebar — always visible */}
+          {/* Desktop sidebar — collapsible with smooth width animation */}
           {isDesktop && (
-            <aside className="flex h-full w-64 flex-col border-r border-[--color-border] bg-[--color-background]">
-              <Sidebar />
-            </aside>
+            <motion.aside
+              initial={false}
+              animate={{ width: desktopCollapsed ? 0 : '17rem' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 42 }}
+              className="h-full shrink-0 overflow-hidden border-r border-border/60"
+            >
+              <div className="h-full w-[17rem]">
+                <Sidebar />
+              </div>
+            </motion.aside>
           )}
 
           {/* Mobile sidebar — Sheet drawer */}

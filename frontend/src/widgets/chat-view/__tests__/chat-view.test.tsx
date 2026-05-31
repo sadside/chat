@@ -49,7 +49,7 @@ describe('ChatView', () => {
   it('shows empty state greeting when no messages', () => {
     renderWithClient(<ChatView messages={[]} chatId="c1" />);
     // greeting varies by time of day — assert by tagline instead.
-    expect(screen.getByText(/Локальная LLM/)).toBeInTheDocument();
+    expect(screen.getByText(/Локальная языковая модель/)).toBeInTheDocument();
   });
 
   it('renders user and assistant messages', () => {

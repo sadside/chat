@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { AuthCard } from '@/features/auth-login/ui/AuthCard';
 import { AuthBackground } from '@/features/auth-login/ui/AuthBackground';
 import { useOtpFlowStore } from '@/features/auth-login/model';
+import { NovaAvatar } from '@/shared/ui/nova-avatar';
 import { useEffect } from 'react';
 
 export function AuthPage() {
@@ -14,24 +15,19 @@ export function AuthPage() {
   }, [reset]);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-[--color-background]">
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-background">
       <AuthBackground />
 
       {/* Content layer */}
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-sm">
         {/* Brand wordmark */}
-        <div className="text-center">
-          <span
-            className="text-4xl font-black tracking-tight select-none bg-clip-text text-transparent"
-            style={{
-              backgroundImage:
-                'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent-alt) 100%)',
-            }}
-          >
-            ·Nova
+        <div className="flex flex-col items-center text-center">
+          <NovaAvatar size={44} />
+          <span className="text-accent-gradient font-display mt-4 select-none text-4xl font-semibold tracking-tight">
+            Nova
           </span>
-          <p className="mt-1 text-xs text-[--color-muted-foreground] tracking-wide uppercase">
-            Локальный AI-чат с приватностью.
+          <p className="mt-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Локальный AI-чат с приватностью
           </p>
         </div>
 

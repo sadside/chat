@@ -14,11 +14,11 @@ export function AuthCard() {
     <div
       className={[
         'relative w-full max-w-sm overflow-hidden',
-        'rounded-2xl border border-[--color-border]',
-        'bg-[--color-card]/90 backdrop-blur-sm',
+        'rounded-2xl border border-border',
+        'bg-card/90 backdrop-blur-sm',
         'p-8 shadow-2xl',
         // tinted shadow via ring
-        'ring-1 ring-[--color-primary]/10',
+        'ring-1 ring-primary/10',
       ].join(' ')}
       style={{
         boxShadow:
@@ -31,7 +31,7 @@ export function AuthCard() {
         </h1>
         <p
           aria-live="polite"
-          className="mt-1 text-sm text-[--color-muted-foreground]"
+          className="mt-1 text-sm text-muted-foreground"
         >
           {stage === 'email-input' &&
             'Введите e-mail, чтобы получить код входа.'}
@@ -72,7 +72,7 @@ export function AuthCard() {
             className="flex flex-col items-center gap-3 py-4 text-center"
           >
             <CheckCircle2 className="h-10 w-10 text-green-500" />
-            <p className="text-sm text-[--color-muted-foreground]">
+            <p className="text-sm text-muted-foreground">
               Готово! Перенаправляем…
             </p>
           </motion.div>

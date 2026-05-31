@@ -224,29 +224,29 @@ export function CommandPalette() {
         <DialogHeader className="sr-only">
           <DialogTitle>Командная панель</DialogTitle>
         </DialogHeader>
-        <div className="flex items-center gap-2 border-b border-[--color-border] px-4 py-3">
-          <Search className="h-4 w-4 text-[--color-muted-foreground]" />
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <Search className="h-4 w-4 text-muted-foreground" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder="Поиск чатов, действий, моделей…"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-[--color-muted-foreground]"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
-          <kbd className="hidden rounded border border-[--color-border] bg-[--color-muted] px-1.5 py-0.5 text-[10px] text-[--color-muted-foreground] sm:inline">
+          <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">
             ESC
           </kbd>
         </div>
         <div className="max-h-[60vh] overflow-y-auto p-2">
           {results.length === 0 && (
-            <div className="px-3 py-8 text-center text-sm text-[--color-muted-foreground]">
+            <div className="px-3 py-8 text-center text-sm text-muted-foreground">
               Ничего не найдено
             </div>
           )}
           {grouped.map((g) => (
             <div key={g.section} className="mb-1">
-              <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground]">
+              <div className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                 {g.section}
               </div>
               {g.items.map((cmd) => {
@@ -259,14 +259,14 @@ export function CommandPalette() {
                     onClick={() => cmd.run(close)}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                       idx === active
-                        ? 'bg-[--color-primary]/10 text-[--color-foreground]'
-                        : 'hover:bg-[--color-muted]'
+                        ? 'bg-primary/10 text-foreground'
+                        : 'hover:bg-muted'
                     }`}
                   >
-                    <cmd.Icon className="h-4 w-4 text-[--color-muted-foreground]" />
+                    <cmd.Icon className="h-4 w-4 text-muted-foreground" />
                     <span className="flex-1 truncate">{cmd.title}</span>
                     {cmd.hint && (
-                      <kbd className="rounded border border-[--color-border] bg-[--color-muted] px-1.5 py-0.5 text-[10px] text-[--color-muted-foreground]">
+                      <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         {cmd.hint}
                       </kbd>
                     )}

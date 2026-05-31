@@ -50,7 +50,7 @@ export function StreamingView({ content }: Props) {
         {showCaret && (
           <span
             aria-hidden="true"
-            className="ml-0.5 inline-block w-[2px] animate-pulse bg-[--color-primary] align-text-bottom"
+            className="ml-0.5 inline-block w-[2px] animate-pulse bg-primary align-text-bottom"
             style={{ height: '1.05em' }}
           />
         )}

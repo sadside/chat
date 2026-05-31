@@ -39,7 +39,7 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-[--color-accent] text-xs font-bold text-[--color-accent-foreground] hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[--color-ring]"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Меню пользователя"
         >
           {initials}

@@ -130,10 +130,9 @@ export function MessageBubble({
           <div
             className={cn(
               'relative text-[15px] leading-relaxed',
-              'rounded-2xl rounded-tr-md px-4 py-2.5',
-              'bg-gradient-to-br from-[oklch(0.65_0.20_280/0.14)] to-[oklch(0.65_0.20_280/0.06)]',
-              'border border-[oklch(0.65_0.20_280/0.20)]',
-              'text-foreground shadow-sm',
+              'rounded-[1.15rem] rounded-tr-sm px-4 py-2.5',
+              'border border-bubble-border bg-bubble text-bubble-foreground',
+              editing && 'w-[min(68ch,80vw)]',
             )}
           >
             {editing ? (
@@ -143,7 +142,7 @@ export function MessageBubble({
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   rows={Math.min(8, draft.split('\n').length + 1)}
-                  className="w-full resize-none rounded-md border border-[--color-border] bg-background p-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/60"
+                  className="w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm leading-6 text-foreground outline-none focus:ring-2 focus:ring-ring/40"
                   aria-label="Редактирование сообщения"
                 />
                 <div className="flex items-center justify-end gap-2">
@@ -182,7 +181,7 @@ export function MessageBubble({
       <div className="flex flex-col items-center pt-0.5">
         <NovaAvatar />
         <div
-          className="mt-1 w-px flex-1 bg-gradient-to-b from-[oklch(0.65_0.20_280/0.55)] to-transparent"
+          className="mt-1.5 w-px flex-1 bg-gradient-to-b from-border to-transparent"
           aria-hidden="true"
         />
       </div>

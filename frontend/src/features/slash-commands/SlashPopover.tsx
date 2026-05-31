@@ -44,7 +44,7 @@ export function SlashPopover({ query, onPick, onClose }: Props) {
   if (list.length === 0) return null;
 
   return (
-    <div className="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-xl border border-[--color-border] bg-[--color-popover]/95 shadow-xl backdrop-blur-xl">
+    <div className="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-xl border border-border bg-popover/95 shadow-xl backdrop-blur-xl">
       {list.map((c, i) => (
         <button
           key={c.id}
@@ -52,11 +52,11 @@ export function SlashPopover({ query, onPick, onClose }: Props) {
           onMouseEnter={() => setActive(i)}
           onClick={() => onPick(c)}
           className={`flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm transition-colors ${
-            i === active ? 'bg-[--color-primary]/10' : 'hover:bg-[--color-muted]'
+            i === active ? 'bg-primary/10' : 'hover:bg-muted'
           }`}
         >
-          <span className="font-medium text-[--color-foreground]">{c.label}</span>
-          <span className="text-xs text-[--color-muted-foreground]">{c.description}</span>
+          <span className="font-medium text-foreground">{c.label}</span>
+          <span className="text-xs text-muted-foreground">{c.description}</span>
         </button>
       ))}
     </div>

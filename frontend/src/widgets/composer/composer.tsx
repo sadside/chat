@@ -79,8 +79,9 @@ export function Composer({
     <div
       data-tour="composer"
       className={cn(
-        'composer-root relative flex flex-col gap-1 rounded-2xl border border-[--color-border] bg-[--color-card] px-4 py-3 shadow-sm',
-        'focus-within:ring-2 focus-within:ring-[--color-ring]/40',
+        'composer-root relative flex flex-col gap-1.5 rounded-2xl border border-border bg-card px-4 py-3',
+        'shadow-soft transition-all duration-200',
+        'focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-ring/15',
         disabled && 'opacity-50'
       )}
     >
@@ -93,13 +94,13 @@ export function Composer({
       )}
 
       {pendingCommand && (
-        <div className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-md bg-[--color-primary]/10 px-2 py-0.5 text-xs font-medium text-[--color-primary]">
+        <div className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
           {pendingCommand.label}
           <button
             type="button"
             onClick={() => setPendingCommand(null)}
             aria-label="Очистить команду"
-            className="rounded p-0.5 hover:bg-[--color-primary]/20"
+            className="rounded p-0.5 hover:bg-primary/20"
           >
             <X className="h-3 w-3" />
           </button>
@@ -110,8 +111,8 @@ export function Composer({
         ref={textareaRef}
         className={cn(
           'w-full resize-none bg-transparent text-sm leading-6 outline-none',
-          'placeholder:text-[--color-muted-foreground]',
-          tooLong && 'text-[--color-destructive]'
+          'placeholder:text-muted-foreground',
+          tooLong && 'text-destructive'
         )}
         placeholder={pendingCommand ? 'Введите аргумент команды…' : placeholder}
         rows={1}
@@ -126,7 +127,7 @@ export function Composer({
       <div className="flex items-center justify-between">
         <ModelPicker />
         {tooLong && (
-          <span className="ml-3 text-xs text-[--color-destructive]">
+          <span className="ml-3 text-xs text-destructive">
             {value.length}/{MAX_LENGTH} — слишком длинное
           </span>
         )}
@@ -136,22 +137,26 @@ export function Composer({
           <Button
             size="icon"
             variant="destructive"
-            className="h-8 w-8 rounded-full transition-transform active:scale-95"
+            className="h-8 w-8 rounded-lg transition-transform active:scale-95"
             onClick={onStop}
             aria-label="Остановить генерацию"
           >
-            <Square className="h-4 w-4 fill-current" />
+            <Square className="h-3.5 w-3.5 fill-current" />
           </Button>
         ) : (
-          <Button
-            size="icon"
-            className="h-8 w-8 rounded-full transition-transform hover:scale-105 active:scale-95"
+          <button
+            type="button"
+            className={cn(
+              'flex h-8 w-8 items-center justify-center rounded-lg transition-all',
+              'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95',
+              'disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+            )}
             disabled={!value.trim() || disabled || tooLong}
             onClick={handleSend}
             aria-label="Отправить сообщение"
           >
-            <Send className="h-4 w-4" />
-          </Button>
+            <Send className="h-[15px] w-[15px]" />
+          </button>
         )}
       </div>
     </div>

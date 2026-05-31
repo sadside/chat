@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, X } from 'lucide-react';
 import { useRouterState } from '@tanstack/react-router';
-import { Button } from '@/shared/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,32 +57,38 @@ export function Sidebar() {
   const currentChatId = match ? match[1] : undefined;
 
   return (
-    <nav data-tour="sidebar" className="flex h-full flex-col gap-1 px-2 py-3 bg-[--color-sidebar]/80 backdrop-blur-xl">
-      {/* New chat button */}
-      <Button
+    <nav data-tour="sidebar" className="flex h-full flex-col gap-1.5 bg-sidebar px-2.5 py-3.5">
+      {/* New chat — modest bordered button with a small accent icon chip */}
+      <button
         onClick={() => createChat.mutate()}
         disabled={createChat.isPending}
-        className="w-full justify-between gap-2 rounded-xl px-3 h-10 mb-1"
-        variant="outline"
         aria-label="Создать новый чат"
+        className={cn(
+          'group mb-1 flex h-10 w-full items-center justify-between gap-2 rounded-xl px-2 pr-3',
+          'border border-border bg-card text-sm font-medium text-foreground',
+          'transition-all duration-150 hover:border-primary/40 hover:bg-accent',
+          'active:scale-[0.99] disabled:opacity-60'
+        )}
       >
-        <span className="flex items-center gap-2">
-          <Plus className="h-4 w-4 shrink-0" />
+        <span className="flex items-center gap-2.5">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+            <Plus className="h-4 w-4 shrink-0" />
+          </span>
           <span>Новый чат</span>
         </span>
-        <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[10px] text-muted-foreground font-mono">
+        <kbd className="hidden items-center gap-0.5 rounded-md border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
           <span>⌘</span><span>K</span>
         </kbd>
-      </Button>
+      </button>
 
       {/* Search box */}
       <div className="relative mb-1">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
           className={cn(
-            'w-full rounded-lg bg-[--color-background]/50 pl-8 pr-8 h-8 text-sm outline-none',
-            'placeholder:text-muted-foreground border-0 ring-0',
-            'focus:ring-1 focus:ring-[--color-ring]/40 transition-shadow'
+            'h-9 w-full rounded-lg border border-border/60 bg-background/40 pl-9 pr-8 text-sm outline-none',
+            'placeholder:text-muted-foreground',
+            'transition-all focus:border-primary/40 focus:bg-background/70 focus:ring-2 focus:ring-ring/25'
           )}
           placeholder="Поиск по чатам…"
           value={query}
@@ -104,14 +109,14 @@ export function Sidebar() {
       {/* Chat list */}
       <div className="flex-1 space-y-0.5 overflow-y-auto">
         {results.length === 0 && isFiltering && (
-          <p className="px-3 py-4 text-center text-xs text-[--color-muted-foreground]">
+          <p className="px-3 py-4 text-center text-xs text-muted-foreground">
             Ничего не найдено
           </p>
         )}
 
         {pinned.length > 0 && (
           <>
-            <p className="select-none px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground]">
+            <p className="select-none px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Закреплённые
             </p>
             {pinned.map((chat) => (
@@ -130,7 +135,7 @@ export function Sidebar() {
 
         {recent.length > 0 && (
           <>
-            <p className="select-none px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground]">
+            <p className="select-none px-2 pt-3 pb-1 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Недавнее
             </p>
             {recent.map((chat) => (

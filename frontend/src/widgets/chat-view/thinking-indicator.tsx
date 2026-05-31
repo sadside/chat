@@ -8,19 +8,19 @@ export function ThinkingIndicator() {
   return (
     <div className="flex w-full items-start gap-3">
       <NovaAvatar />
-      <div className="flex items-center gap-1.5 pt-1 text-sm text-[--color-muted-foreground]">
+      <div className="flex items-center gap-1.5 pt-1 text-sm text-muted-foreground">
         <span>Думаю</span>
         <span className="inline-flex gap-0.5">
           <span
-            className="h-1 w-1 animate-bounce rounded-full bg-[--color-muted-foreground]"
+            className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"
             style={{ animationDelay: '0ms' }}
           />
           <span
-            className="h-1 w-1 animate-bounce rounded-full bg-[--color-muted-foreground]"
+            className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"
             style={{ animationDelay: '120ms' }}
           />
           <span
-            className="h-1 w-1 animate-bounce rounded-full bg-[--color-muted-foreground]"
+            className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground"
             style={{ animationDelay: '240ms' }}
           />
         </span>

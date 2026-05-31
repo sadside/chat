@@ -15,7 +15,7 @@ export function ReasoningPanel({ content, streaming = false }: Props) {
   const [open, setOpen] = useState(streaming);
   if (!content.trim()) return null;
   return (
-    <div className="mb-3 rounded-lg border border-dashed border-[--color-border] bg-[--color-muted]/30 px-3 py-2 text-sm text-[--color-muted-foreground]">
+    <div className="mb-3 rounded-lg border border-dashed border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -25,7 +25,7 @@ export function ReasoningPanel({ content, streaming = false }: Props) {
         <Brain className="h-3 w-3" />
         Размышления
         {streaming && (
-          <span className="ml-2 inline-block h-1 w-1 animate-pulse rounded-full bg-[--color-primary]" />
+          <span className="ml-2 inline-block h-1 w-1 animate-pulse rounded-full bg-primary" />
         )}
       </button>
       {open && (

@@ -6,7 +6,7 @@ import { MarkdownContent } from '@/shared/ui/markdown-content';
 import { queryClient } from '@/app/providers/query-provider';
 import { meQueryOptions } from '@/entities/user/api';
 
-export const Route = createFileRoute('/chats/$chatId/print')({
+export const Route = createFileRoute('/chats/$chatId_/print')({
   beforeLoad: async () => {
     try {
       const u = await queryClient.ensureQueryData(meQueryOptions);

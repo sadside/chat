@@ -121,8 +121,8 @@ export function GlobalSearch() {
         <DialogHeader className="sr-only">
           <DialogTitle>Поиск по чатам</DialogTitle>
         </DialogHeader>
-        <div className="flex items-center gap-2 border-b border-[--color-border] px-4 py-3">
-          <Search className="h-4 w-4 text-[--color-muted-foreground]" />
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <Search className="h-4 w-4 text-muted-foreground" />
           <input
             autoFocus
             value={query}
@@ -132,17 +132,17 @@ export function GlobalSearch() {
             }}
             onKeyDown={onKeyDown}
             placeholder="Поиск по всем сообщениям…"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-[--color-muted-foreground]"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
         <div className="max-h-[65vh] overflow-y-auto p-2">
           {query.trim() && results.length === 0 && (
-            <div className="px-3 py-8 text-center text-sm text-[--color-muted-foreground]">
+            <div className="px-3 py-8 text-center text-sm text-muted-foreground">
               Ничего не найдено
             </div>
           )}
           {!query.trim() && (
-            <div className="px-3 py-8 text-center text-sm text-[--color-muted-foreground]">
+            <div className="px-3 py-8 text-center text-sm text-muted-foreground">
               Введите запрос для поиска по всем чатам
             </div>
           )}
@@ -152,18 +152,18 @@ export function GlobalSearch() {
               onMouseEnter={() => setActive(i)}
               onClick={() => go(h)}
               className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                i === active ? 'bg-[--color-primary]/10' : 'hover:bg-[--color-muted]'
+                i === active ? 'bg-primary/10' : 'hover:bg-muted'
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className="rounded bg-[--color-primary]/10 px-1.5 py-0.5 text-[10px] uppercase text-[--color-primary]">
+                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] uppercase text-primary">
                   {h.message.role === 'user' ? 'Вы' : 'Nova'}
                 </span>
-                <span className="truncate text-xs text-[--color-muted-foreground]">
+                <span className="truncate text-xs text-muted-foreground">
                   {h.chatTitle}
                 </span>
               </div>
-              <div className="mt-1 line-clamp-2 text-[--color-foreground]">{h.snippet}</div>
+              <div className="mt-1 line-clamp-2 text-foreground">{h.snippet}</div>
             </button>
           ))}
         </div>

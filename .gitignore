@@ -38,4 +38,3 @@ frontend/dist/
 frontend/.vite/
 frontend/.env
 frontend/.env.local
-frontend/src/app/routeTree.gen.ts

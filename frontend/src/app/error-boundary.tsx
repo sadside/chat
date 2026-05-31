@@ -50,14 +50,14 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex h-full items-center justify-center p-8 text-center">
           <div className="max-w-md space-y-2">
-            <p className="text-lg font-semibold text-[--color-destructive]">
+            <p className="text-lg font-semibold text-destructive">
               Что-то пошло не так
             </p>
-            <p className="text-sm text-[--color-muted-foreground]">
+            <p className="text-sm text-muted-foreground">
               {this.state.error?.message ?? 'Произошла непредвиденная ошибка.'}
             </p>
             <button
-              className="mt-4 rounded-md bg-[--color-primary] px-4 py-2 text-sm text-[--color-primary-foreground] hover:opacity-90"
+              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90"
               onClick={this.handleReset}
             >
               Перезагрузить

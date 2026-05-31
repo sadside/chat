@@ -30,7 +30,7 @@ export function MessagesByDayChart({ data }: Props) {
               width={w}
               height={Math.max(2, h)}
               rx={4}
-              className="fill-[--color-primary]/70 transition-all hover:fill-[--color-primary]"
+              className="fill-primary/70 transition-all hover:fill-primary"
             >
               <title>{`${d.date}: ${d.count}`}</title>
             </rect>
@@ -38,7 +38,7 @@ export function MessagesByDayChart({ data }: Props) {
               x={w / 2}
               y={134}
               textAnchor="middle"
-              className="fill-[--color-muted-foreground] text-[8px]"
+              className="fill-muted-foreground text-[8px]"
             >
               {d.date.slice(5)}
             </text>

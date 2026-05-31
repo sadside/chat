@@ -7,7 +7,7 @@ import { useSearchInChat } from '@/features/search-in-chat';
 import { MessageBubble } from './message-bubble';
 import { EmptyState } from './empty-state';
 import { GenerationProgress } from './generation-progress';
-import { ChatSearchBar } from './search-bar';
+import { ChatSearchBar, ChatSearchTrigger } from './search-bar';
 import { ThinkingIndicator } from './thinking-indicator';
 import { BranchNav, useBranchStore } from '@/features/branching';
 import type { Message } from '@/entities/message/types';
@@ -39,6 +39,7 @@ export function ChatView({
   const stream = useStreamStore();
   const isStreaming = stream.status === 'streaming' || stream.status === 'stopping';
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const matchedIds = useSearchInChat(messages, query);
   const filterActive = query.trim().length > 0;
   const selectedBranches = useBranchStore((s) => s.selected);
@@ -156,9 +157,9 @@ export function ChatView({
     const el = document.getElementById(`msg-${focusId}`);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.classList.add('ring-2', 'ring-[--color-primary]/60', 'rounded-xl', 'transition-all');
+    el.classList.add('ring-2', 'ring-primary/60', 'rounded-xl', 'transition-all');
     const t = setTimeout(() => {
-      el.classList.remove('ring-2', 'ring-[--color-primary]/60');
+      el.classList.remove('ring-2', 'ring-primary/60');
     }, 1800);
     return () => clearTimeout(t);
   }, [focusId, messages.length]);
@@ -178,13 +179,23 @@ export function ChatView({
       : null;
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="relative flex-1 overflow-y-auto">
       {hasEnoughForSearch && (
-        <ChatSearchBar
-          value={query}
-          onChange={setQuery}
-          resultCount={filterActive ? matchedIds.size : null}
-        />
+        <div className="sticky top-0 z-10 h-0">
+          {searchOpen ? (
+            <ChatSearchBar
+              value={query}
+              onChange={setQuery}
+              resultCount={filterActive ? matchedIds.size : null}
+              onClose={() => {
+                setSearchOpen(false);
+                setQuery('');
+              }}
+            />
+          ) : (
+            <ChatSearchTrigger onClick={() => setSearchOpen(true)} />
+          )}
+        </div>
       )}
       <div className="mx-auto max-w-3xl px-4 py-6 flex flex-col gap-8">
         {displayMessages.map((item, idx) => {

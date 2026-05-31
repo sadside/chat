@@ -56,13 +56,21 @@ export function ChatListItem({
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.12 }}
       className={cn(
-        'group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm',
+        'group relative flex items-center gap-2 rounded-xl px-3 py-2 text-sm',
+        'cursor-pointer transition-all duration-150',
         isActive
-          ? 'bg-[--color-primary]/10 text-foreground border-l-2 border-l-[--color-primary] pl-[10px]'
-          : 'hover:bg-[--color-primary]/5 border-l-2 border-l-transparent',
-        'cursor-pointer transition-colors'
+          ? 'bg-accent font-medium text-foreground'
+          : 'text-foreground/72 hover:bg-accent/60 hover:text-foreground'
       )}
     >
+      {isActive && (
+        <motion.span
+          layoutId="sidebar-active-pill"
+          className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-primary"
+          transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+          aria-hidden="true"
+        />
+      )}
       {editMode ? (
         <div className="flex flex-1 items-center gap-1">
           <input
@@ -93,7 +101,7 @@ export function ChatListItem({
             params={{ chatId: chat.id }}
             className="flex flex-1 items-center gap-1.5 truncate"
           >
-            {chat.pinned && <Pin className="h-3 w-3 shrink-0 text-[--color-primary]" />}
+            {chat.pinned && <Pin className="h-3 w-3 shrink-0 text-primary" />}
             <span className="truncate">{chat.title}</span>
           </Link>
 

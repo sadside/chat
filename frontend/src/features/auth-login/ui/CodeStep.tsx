@@ -60,9 +60,9 @@ export function CodeStep() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
-      <p className="text-sm text-[--color-muted-foreground] text-center">
+      <p className="text-sm text-muted-foreground text-center">
         Мы отправили 6-значный код на{' '}
-        <span className="font-medium text-[--color-foreground]">{email}</span>.
+        <span className="font-medium text-foreground">{email}</span>.
       </p>
 
       <div className="flex flex-col items-center gap-2">
@@ -122,7 +122,7 @@ export function CodeStep() {
         type="button"
         onClick={handleResend}
         disabled={cooldown > 0 || isLoading}
-        className="text-sm text-[--color-muted-foreground] hover:text-[--color-foreground] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-center"
+        className="text-sm text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-center"
       >
         {cooldown > 0 ? `Отправить снова через ${cooldown}с` : 'Отправить код снова'}
       </button>

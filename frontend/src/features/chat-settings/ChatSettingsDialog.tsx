@@ -52,7 +52,7 @@ export function ChatSettingsDialog({ chatId, initialPrompt, open, onOpenChange }
           <DialogTitle>Настройки чата</DialogTitle>
         </DialogHeader>
         <div className="space-y-1">
-          <label className="text-xs font-medium uppercase tracking-[0.12em] text-[--color-muted-foreground]">
+          <label className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
             System prompt
           </label>
           <textarea
@@ -61,9 +61,9 @@ export function ChatSettingsDialog({ chatId, initialPrompt, open, onOpenChange }
             rows={6}
             maxLength={4000}
             placeholder="Например: «Ты эксперт по Python. Отвечай кратко, с примерами кода.»"
-            className="w-full resize-none rounded-md border border-[--color-border] bg-[--color-background] p-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-[--color-ring]/40"
+            className="w-full resize-none rounded-md border border-border bg-background p-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/40"
           />
-          <div className="flex items-center justify-between text-[11px] text-[--color-muted-foreground]">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
             <span>Промпт добавится после системного — Nova останется собой.</span>
             <span className="tabular-nums">{value.length}/4000</span>
           </div>

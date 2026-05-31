@@ -25,8 +25,8 @@ export function Toaster() {
             className={cn(
               'flex min-w-[280px] items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm shadow-xl backdrop-blur-xl',
               t.variant === 'destructive'
-                ? 'border-[--color-destructive]/40 bg-[--color-destructive]/10 text-[--color-destructive]'
-                : 'border-[--color-border] bg-[--color-background]/80 text-[--color-foreground]'
+                ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                : 'border-border bg-background/80 text-foreground'
             )}
           >
             <span>{t.message}</span>
