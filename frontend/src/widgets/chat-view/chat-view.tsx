@@ -9,6 +9,7 @@ import { EmptyState } from './empty-state';
 import { GenerationProgress } from './generation-progress';
 import { ChatSearchBar } from './search-bar';
 import { ThinkingIndicator } from './thinking-indicator';
+import { BranchNav, useBranchStore } from '@/features/branching';
 import type { Message } from '@/entities/message/types';
 
 interface ChatViewProps {
@@ -40,13 +41,52 @@ export function ChatView({
   const [query, setQuery] = useState('');
   const matchedIds = useSearchInChat(messages, query);
   const filterActive = query.trim().length > 0;
+  const selectedBranches = useBranchStore((s) => s.selected);
+  const selectBranch = useBranchStore((s) => s.select);
+
+  // Group assistant siblings by parent_id. Used to render BranchNav and to
+  // filter `messages` down to a single active branch.
+  const siblingsByParent = useMemo(() => {
+    const out = new Map<string, Message[]>();
+    for (const m of messages) {
+      if (m.role !== 'assistant') continue;
+      const p = m.parent_id;
+      if (!p) continue;
+      const arr = out.get(p) ?? [];
+      arr.push(m);
+      out.set(p, arr);
+    }
+    for (const arr of out.values()) {
+      arr.sort((a, b) => (a.branch_index ?? 0) - (b.branch_index ?? 0));
+    }
+    return out;
+  }, [messages]);
+
+  // Filter messages to the active branch.
+  const branchFilteredMessages = useMemo(() => {
+    const out: Message[] = [];
+    const hideAssistantIds = new Set<string>();
+    for (const [parent, siblings] of siblingsByParent.entries()) {
+      if (siblings.length <= 1) continue;
+      const idx = selectedBranches[parent] ?? siblings.length - 1;
+      const active = siblings[Math.min(idx, siblings.length - 1)];
+      for (const s of siblings) {
+        if (s.id !== active?.id) hideAssistantIds.add(s.id);
+      }
+    }
+    for (const m of messages) {
+      if (hideAssistantIds.has(m.id)) continue;
+      out.push(m);
+    }
+    return out;
+  }, [messages, siblingsByParent, selectedBranches]);
 
   // Build display list: real messages + optimistic overlay
   const displayMessages: (Message | '__divider__')[] = useMemo(() => {
     const result: (Message | '__divider__')[] = [];
     let prevDate: Date | null = null;
 
-    const allMessages: Message[] = [...messages];
+    const allMessages: Message[] = [...branchFilteredMessages];
 
     // The overlay is relevant whenever we have an active stream for THIS
     // chat — including the short window between `assistant_done` and the
@@ -59,7 +99,7 @@ export function ChatView({
     // Dedupe by id — after user_message event we adopt the server-assigned id
     // so the optimistic bubble and the refetched real row share the same key.
     if (overlayActive && stream.optimisticUserMessage) {
-      const alreadyExists = messages.some(
+      const alreadyExists = branchFilteredMessages.some(
         (m) => m.id === stream.optimisticUserMessage!.id,
       );
       if (!alreadyExists) {
@@ -76,7 +116,9 @@ export function ChatView({
 
     // Append streaming / just-finished assistant message.
     if (overlayActive && stream.assistantMessageId) {
-      const alreadyExists = messages.some((m) => m.id === stream.assistantMessageId);
+      const alreadyExists = branchFilteredMessages.some(
+        (m) => m.id === stream.assistantMessageId,
+      );
       if (!alreadyExists) {
         allMessages.push({
           id: stream.assistantMessageId,
@@ -99,7 +141,7 @@ export function ChatView({
     }
 
     return result;
-  }, [messages, isStreaming, stream, chatId]);
+  }, [branchFilteredMessages, isStreaming, stream, chatId]);
 
   const { anchorRef } = useAutoScroll([
     displayMessages.length,
@@ -170,6 +212,11 @@ export function ChatView({
           const isStreamingThis =
             isStreaming && msg.id === stream.assistantMessageId && msg.role === 'assistant';
 
+          const siblings = msg.parent_id ? siblingsByParent.get(msg.parent_id) : undefined;
+          const currentBranchIdx = siblings
+            ? siblings.findIndex((s) => s.id === msg.id)
+            : -1;
+
           return (
             <div key={msg.id} id={`msg-${msg.id}`}>
               <MessageBubble
@@ -182,6 +229,16 @@ export function ChatView({
                   ? { onEdit: (c: string) => onEditMessage(msg.id, c) }
                   : {})}
               />
+              {siblings && siblings.length > 1 && currentBranchIdx >= 0 && msg.parent_id && (
+                <div className="ml-9 mt-1">
+                  <BranchNav
+                    current={currentBranchIdx}
+                    total={siblings.length}
+                    onPrev={() => selectBranch(msg.parent_id!, currentBranchIdx - 1)}
+                    onNext={() => selectBranch(msg.parent_id!, currentBranchIdx + 1)}
+                  />
+                </div>
+              )}
             </div>
           );
         })}

@@ -6,6 +6,9 @@ export interface Message {
   role: MessageRole;
   content: string;
   aborted: boolean;
+  parent_id?: string | null;
+  branch_index?: number;
+  model_used?: string | null;
   created_at: string;
 }
 
