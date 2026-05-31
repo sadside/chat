@@ -66,10 +66,11 @@ class LlmClient:
         *,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        model: str | None = None,
     ) -> AsyncIterator[str]:
         """Yield text deltas from vLLM SSE stream."""
         payload = {
-            "model": self._model,
+            "model": model or self._model,
             "messages": messages,
             "stream": True,
             "temperature": temperature if temperature is not None else self._temperature,
@@ -106,10 +107,11 @@ class LlmClient:
         *,
         temperature: float | None = None,
         max_tokens: int | None = None,
+        model: str | None = None,
     ) -> str:
         """Non-streaming completion. Used for title generation."""
         payload = {
-            "model": self._model,
+            "model": model or self._model,
             "messages": messages,
             "stream": False,
             "temperature": temperature if temperature is not None else self._temperature,
@@ -124,6 +126,19 @@ class LlmClient:
             return _strip_cjk(data["choices"][0]["message"]["content"])
         except LlmUnavailableError:
             raise
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
+            raise LlmUnavailableError(str(exc)) from exc
+
+    async def list_models(self) -> list[str]:
+        """List model ids exposed by the OpenAI-compatible /models endpoint."""
+        try:
+            response = await self._client.get("/models")
+            if response.status_code >= 500:
+                raise LlmUnavailableError(f"vLLM returned {response.status_code}")
+            response.raise_for_status()
+            data = response.json()
+            items = data.get("data", []) if isinstance(data, dict) else []
+            return [m["id"] for m in items if isinstance(m, dict) and "id" in m]
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError) as exc:
             raise LlmUnavailableError(str(exc)) from exc
 

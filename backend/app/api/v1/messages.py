@@ -19,11 +19,12 @@ router = APIRouter(prefix="/chats", tags=["messages"])
 async def send_message(
     chat_id: UUID,
     body: SendMessageIn,
+    model: str | None = None,
     current_user: User = Depends(get_current_user),  # noqa: B008
     svc: MessageService = Depends(get_message_service),  # noqa: B008
 ) -> StreamingResponse:
     return StreamingResponse(
-        svc.stream_new_message(current_user.id, chat_id, body.content),
+        svc.stream_new_message(current_user.id, chat_id, body.content, model),
         headers=SSE_HEADERS,
     )
 
@@ -31,10 +32,11 @@ async def send_message(
 @router.post("/{chat_id}/regenerate")
 async def regenerate_message(
     chat_id: UUID,
+    model: str | None = None,
     current_user: User = Depends(get_current_user),  # noqa: B008
     svc: MessageService = Depends(get_message_service),  # noqa: B008
 ) -> StreamingResponse:
     return StreamingResponse(
-        svc.stream_regenerate(current_user.id, chat_id),
+        svc.stream_regenerate(current_user.id, chat_id, model),
         headers=SSE_HEADERS,
     )

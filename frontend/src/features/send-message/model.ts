@@ -12,6 +12,7 @@ import { messageKeys } from '@/entities/message/queries';
 import { getApiBase } from '@/shared/config/env';
 import { clientLogger, newTraceId } from '@/shared/logger';
 import { toast } from '@/shared/ui/toast';
+import { useSelectedModel } from '@/features/select-model';
 import type {
   SseUserMessageEvent,
   SseAssistantStartEvent,
@@ -78,7 +79,12 @@ export function startMessageStream(options: {
     }, 1500);
   };
 
-  return fetchEventSource(`${getApiBase()}/chats/${chatId}/messages`, {
+  const model = useSelectedModel.getState().selectedModel;
+  const url =
+    `${getApiBase()}/chats/${chatId}/messages` +
+    (model ? `?model=${encodeURIComponent(model)}` : '');
+
+  return fetchEventSource(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Trace-Id': traceId },
     body: JSON.stringify({ content }),

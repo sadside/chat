@@ -12,6 +12,7 @@ import { messageKeys } from '@/entities/message/queries';
 import { getApiBase } from '@/shared/config/env';
 import { clientLogger, newTraceId } from '@/shared/logger';
 import { toast } from '@/shared/ui/toast';
+import { useSelectedModel } from '@/features/select-model';
 import type {
   SseAssistantStartEvent,
   SseDeltaEvent,
@@ -43,7 +44,11 @@ export function useRegenerateMessage(chatId: string) {
     const isStillActive = () => useStreamStore.getState().chatId === chatId;
 
     try {
-      await fetchEventSource(`${getApiBase()}/chats/${chatId}/regenerate`, {
+      const model = useSelectedModel.getState().selectedModel;
+      const url =
+        `${getApiBase()}/chats/${chatId}/regenerate` +
+        (model ? `?model=${encodeURIComponent(model)}` : '');
+      await fetchEventSource(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Trace-Id': traceId },
         credentials: 'include',

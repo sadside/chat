@@ -3,6 +3,7 @@ import type { KeyboardEvent } from 'react';
 import { Send, Square } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
+import { ModelPicker } from './model-picker';
 
 const MAX_ROWS = 8;
 const MAX_LENGTH = 32_000;
@@ -80,8 +81,9 @@ export function Composer({
       />
 
       <div className="flex items-center justify-between">
+        <ModelPicker />
         {tooLong && (
-          <span className="text-xs text-destructive">
+          <span className="ml-3 text-xs text-destructive">
             {value.length}/{MAX_LENGTH} — сообщение слишком длинное
           </span>
         )}

@@ -80,7 +80,7 @@ class MessageService:
     # ------------------------------------------------------------------
 
     async def stream_new_message(
-        self, user_id: UUID, chat_id: UUID, content: str
+        self, user_id: UUID, chat_id: UUID, content: str, model: str | None = None
     ) -> AsyncIterator[bytes]:
         """
         Full SSE stream: user_message → assistant_start → delta* → assistant_done.
@@ -161,7 +161,7 @@ class MessageService:
             "llm.call_start",
             source="llm",
             chatId=str(chat_id),
-            model=settings.vllm_model,
+            model=model or settings.vllm_model,
         )
         llm_started = time.perf_counter()
 
@@ -170,6 +170,7 @@ class MessageService:
                 messages,
                 temperature=self._temperature,
                 max_tokens=self._max_tokens,
+                model=model,
             ):
                 accumulated.append(delta)
                 yield _sse("delta", {"text": delta})
@@ -264,7 +265,9 @@ class MessageService:
             },
         )
 
-    async def stream_regenerate(self, user_id: UUID, chat_id: UUID) -> AsyncIterator[bytes]:
+    async def stream_regenerate(
+        self, user_id: UUID, chat_id: UUID, model: str | None = None
+    ) -> AsyncIterator[bytes]:
         """
         Remove last assistant message, replay streaming with the same history.
         Yields same SSE sequence as stream_new_message (minus user_message event).
@@ -318,7 +321,7 @@ class MessageService:
             "llm.call_start",
             source="llm",
             chatId=str(chat_id),
-            model=settings.vllm_model,
+            model=model or settings.vllm_model,
             regenerate=True,
         )
         llm_started = time.perf_counter()
@@ -328,6 +331,7 @@ class MessageService:
                 context_messages,
                 temperature=self._temperature,
                 max_tokens=self._max_tokens,
+                model=model,
             ):
                 accumulated.append(delta)
                 yield _sse("delta", {"text": delta})
