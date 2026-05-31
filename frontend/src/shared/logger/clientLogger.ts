@@ -14,6 +14,8 @@ export interface ClientLoggerOptions {
   flushSize?: number;
   flushIntervalMs?: number;
   maxQueue?: number;
+  circuitOpenMs?: number;
+  maxFailuresBeforeOpen?: number;
 }
 
 export interface ClientLogger {
@@ -21,15 +23,20 @@ export interface ClientLogger {
   flush(): Promise<void>;
   flushSync(): void;
   _queueSize(): number;
+  _failureCount(): number;
 }
 
 export function createClientLogger(opts: ClientLoggerOptions): ClientLogger {
   const flushSize = opts.flushSize ?? 20;
   const flushIntervalMs = opts.flushIntervalMs ?? 5000;
   const maxQueue = opts.maxQueue ?? 200;
+  const circuitOpenMs = opts.circuitOpenMs ?? 5 * 60 * 1000;
+  const maxFailuresBeforeOpen = opts.maxFailuresBeforeOpen ?? 6;
 
   let queue: ClientLogRecord[] = [];
   let flushing = false;
+  let failures = 0;
+  let circuitOpenUntil = 0;
 
   const timer = setInterval(() => {
     void flush();
@@ -49,19 +56,26 @@ export function createClientLogger(opts: ClientLoggerOptions): ClientLogger {
 
   async function flush(): Promise<void> {
     if (flushing || queue.length === 0) return;
+    if (Date.now() < circuitOpenUntil) return;
     flushing = true;
     const batch = queue;
     queue = [];
     try {
-      await fetch(opts.url, {
+      const res = await fetch(opts.url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ records: batch }),
         credentials: 'include',
         keepalive: true,
       });
+      if (!res.ok) throw new Error(`telemetry ${res.status}`);
+      failures = 0;
     } catch {
+      failures += 1;
       queue = [...batch, ...queue].slice(-maxQueue);
+      if (failures >= maxFailuresBeforeOpen) {
+        circuitOpenUntil = Date.now() + circuitOpenMs;
+      }
     } finally {
       flushing = false;
     }
@@ -97,5 +111,11 @@ export function createClientLogger(opts: ClientLoggerOptions): ClientLogger {
     });
   }
 
-  return { log, flush, flushSync, _queueSize: () => queue.length };
+  return {
+    log,
+    flush,
+    flushSync,
+    _queueSize: () => queue.length,
+    _failureCount: () => failures,
+  };
 }

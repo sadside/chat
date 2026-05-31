@@ -66,4 +66,56 @@ describe('clientLogger', () => {
     logger.flushSync();
     expect(sendBeacon).toHaveBeenCalledOnce();
   });
+
+  it('opens the circuit after maxFailuresBeforeOpen consecutive failures', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('network down'));
+    vi.stubGlobal('fetch', fetchMock);
+    const logger = createClientLogger({
+      url: '/api/v1/_telemetry/logs',
+      flushSize: 100,
+      flushIntervalMs: 999999,
+      maxFailuresBeforeOpen: 3,
+      circuitOpenMs: 60_000,
+    });
+    logger.log('info', 'a', { traceId: 'tid' });
+    await logger.flush();
+    await logger.flush();
+    await logger.flush();
+    expect(logger._failureCount()).toBeGreaterThanOrEqual(3);
+    const callsBefore = fetchMock.mock.calls.length;
+    await logger.flush();
+    expect(fetchMock.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('resets failure counter on successful flush', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('nope'))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const logger = createClientLogger({
+      url: '/api/v1/_telemetry/logs',
+      flushSize: 100,
+      flushIntervalMs: 999999,
+    });
+    logger.log('info', 'a', { traceId: 'tid' });
+    await logger.flush();
+    expect(logger._failureCount()).toBe(1);
+    logger.log('info', 'b', { traceId: 'tid' });
+    await logger.flush();
+    expect(logger._failureCount()).toBe(0);
+  });
+
+  it('treats non-2xx responses as failures', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('boom', { status: 500 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const logger = createClientLogger({
+      url: '/api/v1/_telemetry/logs',
+      flushSize: 100,
+      flushIntervalMs: 999999,
+    });
+    logger.log('info', 'a', { traceId: 'tid' });
+    await logger.flush();
+    expect(logger._failureCount()).toBe(1);
+  });
 });
