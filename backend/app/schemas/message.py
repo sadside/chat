@@ -19,3 +19,7 @@ class MessageOut(BaseModel):
 
 class SendMessageIn(BaseModel):
     content: str = Field(min_length=1, max_length=32_000)
+
+
+class EditMessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=32_000)

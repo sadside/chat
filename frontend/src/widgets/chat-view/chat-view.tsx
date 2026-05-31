@@ -15,6 +15,7 @@ interface ChatViewProps {
   chatId: string;
   onRegenerate?: (() => void) | undefined;
   onExamplePrompt?: ((prompt: string) => void) | undefined;
+  onEditMessage?: ((messageId: string, content: string) => void) | undefined;
 }
 
 function formatDividerDate(dateStr: string): string {
@@ -24,7 +25,13 @@ function formatDividerDate(dateStr: string): string {
   return format(d, 'd MMMM yyyy', { locale: ru });
 }
 
-export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: ChatViewProps) {
+export function ChatView({
+  messages,
+  chatId,
+  onRegenerate,
+  onExamplePrompt,
+  onEditMessage,
+}: ChatViewProps) {
   const stream = useStreamStore();
   const isStreaming = stream.status === 'streaming' || stream.status === 'stopping';
   const [query, setQuery] = useState('');
@@ -154,6 +161,9 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
               showRegenerateButton={msg.id === lastAssistantId && !isStreaming}
               highlight={filterActive ? query : undefined}
               {...(onRegenerate ? { onRegenerate } : {})}
+              {...(onEditMessage
+                ? { onEdit: (c: string) => onEditMessage(msg.id, c) }
+                : {})}
             />
           );
         })}

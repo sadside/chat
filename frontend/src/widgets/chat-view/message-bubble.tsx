@@ -1,6 +1,8 @@
-import { Copy, Check, RefreshCw, ClipboardCopy } from 'lucide-react';
+import { useState } from 'react';
+import { Copy, Check, RefreshCw, ClipboardCopy, Pencil } from 'lucide-react';
 import { MarkdownContent } from '@/shared/ui/markdown-content';
 import { useCopyToClipboard } from '@/shared/hooks/use-clipboard';
+import { Button } from '@/shared/ui/button';
 import { toast } from '@/shared/ui/toast';
 import { cn } from '@/shared/lib/utils';
 import type { Message } from '@/entities/message/types';
@@ -11,6 +13,7 @@ interface MessageBubbleProps {
   onRegenerate?: (() => void) | undefined;
   showRegenerateButton?: boolean | undefined;
   highlight?: string | undefined;
+  onEdit?: ((newContent: string) => void) | undefined;
 }
 
 function highlightText(text: string, query: string | undefined) {
@@ -38,9 +41,28 @@ export function MessageBubble({
   onRegenerate,
   showRegenerateButton = false,
   highlight,
+  onEdit,
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const { copy, copied } = useCopyToClipboard();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(message.content);
+
+  const startEditing = () => {
+    setDraft(message.content);
+    setEditing(true);
+  };
+  const cancelEditing = () => {
+    setEditing(false);
+    setDraft(message.content);
+  };
+  const saveEditing = () => {
+    if (!onEdit) return;
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === message.content.trim()) return;
+    onEdit(trimmed);
+    setEditing(false);
+  };
 
   return (
     // Mount-only fade-in via Tailwind. `animate-in` fires exactly once when
@@ -72,7 +94,30 @@ export function MessageBubble({
             message.aborted && !isUser && 'opacity-70'
           )}
         >
-          {isUser ? (
+          {isUser && editing ? (
+            <div className="flex w-full flex-col gap-2">
+              <textarea
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={Math.min(8, draft.split('\n').length + 1)}
+                className="w-full resize-none rounded-md border border-[--color-border] bg-background p-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/60"
+                aria-label="Редактирование сообщения"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                  Отмена
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!draft.trim() || draft.trim() === message.content.trim()}
+                  onClick={saveEditing}
+                >
+                  Сохранить и пересоздать
+                </Button>
+              </div>
+            </div>
+          ) : isUser ? (
             <p className="whitespace-pre-wrap break-words">
               {highlight ? highlightText(message.content, highlight) : message.content}
             </p>
@@ -87,8 +132,19 @@ export function MessageBubble({
           )}
         </div>
 
-        {/* Action row */}
+        {/* Action row — hidden in edit mode */}
+        {!editing && (
         <div className="flex items-center gap-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {isUser && onEdit && (
+            <button
+              onClick={startEditing}
+              className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Редактировать сообщение"
+              title="Редактировать"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
           <button
             onClick={() => copy(message.content)}
             className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -128,6 +184,7 @@ export function MessageBubble({
             </button>
           )}
         </div>
+        )}
       </div>
     </div>
   );

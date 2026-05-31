@@ -404,6 +404,148 @@ class MessageService:
             },
         )
 
+    async def stream_edit(
+        self,
+        user_id: UUID,
+        chat_id: UUID,
+        message_id: UUID,
+        new_content: str,
+        model: str | None = None,
+    ) -> AsyncIterator[bytes]:
+        """Replace a user message content and regenerate everything after it.
+
+        Emits the same SSE shape as stream_new_message: user_message →
+        assistant_start → delta* → assistant_done. Deletes every row with
+        created_at strictly greater than the target user message (i.e. the
+        assistant reply and any subsequent exchanges).
+        """
+        try:
+            await self._get_chat_or_404(chat_id, user_id)
+        except NotFoundError as exc:
+            yield _sse("error", {"code": exc.code, "message": exc.message})
+            return
+
+        all_msgs = await self._get_messages(chat_id)
+        target = next((m for m in all_msgs if m.id == message_id), None)
+        if target is None or target.role != "user":
+            yield _sse(
+                "error", {"code": "NOT_FOUND", "message": "User message not found"}
+            )
+            return
+
+        from sqlalchemy import delete as sa_delete
+
+        from app.db.models import Message as MsgModel
+
+        await self._db.execute(
+            sa_delete(MsgModel).where(
+                MsgModel.chat_id == chat_id,
+                MsgModel.created_at > target.created_at,
+            )
+        )
+        target.content = new_content
+        target.created_at = datetime.now(UTC)
+        await self._db.flush()
+
+        yield _sse(
+            "user_message",
+            {
+                "id": str(target.id),
+                "role": "user",
+                "content": target.content,
+                "created_at": target.created_at.isoformat(),
+            },
+        )
+
+        history = await self._get_messages(chat_id)
+        context_messages = build_context(history, self._context_window)
+
+        assistant_msg = Message(
+            chat_id=chat_id,
+            role="assistant",
+            content="",
+            aborted=False,
+            created_at=datetime.now(UTC),
+        )
+        self._db.add(assistant_msg)
+        await self._db.flush()
+        await self._db.refresh(assistant_msg)
+        yield _sse("assistant_start", {"id": str(assistant_msg.id)})
+
+        accumulated: list[str] = []
+        aborted = False
+        settings = get_settings()
+        _log.info(
+            "llm.call_start",
+            source="llm",
+            chatId=str(chat_id),
+            model=model or settings.vllm_model,
+            edit=True,
+        )
+        llm_started = time.perf_counter()
+
+        try:
+            async for delta in self._llm.stream(
+                context_messages,
+                temperature=self._temperature,
+                max_tokens=self._max_tokens,
+                model=model,
+            ):
+                accumulated.append(delta)
+                yield _sse("delta", {"text": delta})
+        except asyncio.CancelledError:
+            aborted = True
+            raise
+        except Exception as exc:
+            _log.error(
+                "llm.call_failed",
+                source="llm",
+                chatId=str(chat_id),
+                error=str(exc),
+                edit=True,
+                durationMs=round((time.perf_counter() - llm_started) * 1000, 2),
+            )
+            yield _sse("error", {"code": "LLM_UNAVAILABLE", "message": str(exc)})
+            await self._persist_assistant_fresh(
+                chat_id, assistant_msg.id, "".join(accumulated), aborted=False
+            )
+            return
+        finally:
+            if aborted:
+                await self._persist_assistant_fresh(
+                    chat_id, assistant_msg.id, "".join(accumulated), aborted=True
+                )
+                return  # noqa: B012
+
+        _log.info(
+            "llm.call_end",
+            source="llm",
+            chatId=str(chat_id),
+            edit=True,
+            durationMs=round((time.perf_counter() - llm_started) * 1000, 2),
+        )
+        full_content = "".join(accumulated)
+        assistant_msg.content = full_content
+        await self._db.flush()
+
+        from sqlalchemy import update
+
+        from app.db.models import Chat as ChatModel
+
+        await self._db.execute(
+            update(ChatModel).where(ChatModel.id == chat_id).values(updated_at=datetime.now(UTC))
+        )
+        await self._db.flush()
+
+        yield _sse(
+            "assistant_done",
+            {
+                "id": str(assistant_msg.id),
+                "content": full_content,
+                "aborted": False,
+            },
+        )
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------

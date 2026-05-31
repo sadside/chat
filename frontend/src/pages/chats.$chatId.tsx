@@ -4,6 +4,7 @@ import { ChatView } from '@/widgets/chat-view';
 import { Composer } from '@/widgets/composer';
 import { useStreamChat } from '@/features/send-message';
 import { useRegenerateMessage } from '@/features/regenerate-message';
+import { useEditMessage } from '@/features/edit-message';
 import { useStreamStore } from '@/shared/store/stream-store';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { queryClient } from '@/app/providers/query-provider';
@@ -29,6 +30,7 @@ function ChatPage() {
   const { data: messages = [], isLoading } = useMessagesQuery(chatId);
   const { send, stop, retry, isStreaming, status } = useStreamChat(chatId);
   const { regenerate } = useRegenerateMessage(chatId);
+  const { edit } = useEditMessage(chatId);
 
   // When we arrived here from the Home submit handler, a stream for this
   // chat was already started before navigation. We no longer need a
@@ -59,6 +61,7 @@ function ChatPage() {
         chatId={chatId}
         onRegenerate={regenerate}
         onExamplePrompt={(p) => send(p)}
+        onEditMessage={edit}
       />
       <div className="mx-auto w-full max-w-3xl px-4 pb-4">
         <Composer
