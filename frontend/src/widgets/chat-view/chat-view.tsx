@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useAutoScroll } from '@/shared/hooks/use-auto-scroll';
 import { useStreamStore } from '@/shared/store/stream-store';
+import { useSearchInChat } from '@/features/search-in-chat';
 import { MessageBubble } from './message-bubble';
 import { EmptyState } from './empty-state';
 import { GenerationProgress } from './generation-progress';
+import { ChatSearchBar } from './search-bar';
 import type { Message } from '@/entities/message/types';
 
 interface ChatViewProps {
@@ -25,6 +27,9 @@ function formatDividerDate(dateStr: string): string {
 export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: ChatViewProps) {
   const stream = useStreamStore();
   const isStreaming = stream.status === 'streaming' || stream.status === 'stopping';
+  const [query, setQuery] = useState('');
+  const matchedIds = useSearchInChat(messages, query);
+  const filterActive = query.trim().length > 0;
 
   // Build display list: real messages + optimistic overlay
   const displayMessages: (Message | '__divider__')[] = useMemo(() => {
@@ -96,6 +101,8 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
     return <EmptyState {...(onExamplePrompt ? { onPromptClick: onExamplePrompt } : {})} />;
   }
 
+  const hasEnoughForSearch = messages.length >= 4;
+
   const lastAssistantIndex = [...displayMessages]
     .reverse()
     .findIndex((m) => m !== '__divider__' && (m as Message).role === 'assistant');
@@ -106,6 +113,13 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
 
   return (
     <div className="flex-1 overflow-y-auto">
+      {hasEnoughForSearch && (
+        <ChatSearchBar
+          value={query}
+          onChange={setQuery}
+          resultCount={filterActive ? matchedIds.size : null}
+        />
+      )}
       <div className="mx-auto max-w-3xl px-4 py-6 flex flex-col gap-8">
         {displayMessages.map((item, idx) => {
           if (item === '__divider__') {
@@ -128,6 +142,7 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
           }
 
           const msg = item as Message;
+          if (filterActive && !matchedIds.has(msg.id)) return null;
           const isStreamingThis =
             isStreaming && msg.id === stream.assistantMessageId && msg.role === 'assistant';
 
@@ -137,6 +152,7 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
               message={msg}
               streaming={isStreamingThis}
               showRegenerateButton={msg.id === lastAssistantId && !isStreaming}
+              highlight={filterActive ? query : undefined}
               {...(onRegenerate ? { onRegenerate } : {})}
             />
           );
