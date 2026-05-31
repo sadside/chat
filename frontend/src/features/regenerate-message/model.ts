@@ -11,6 +11,7 @@ import { chatKeys } from '@/entities/chat/queries';
 import { messageKeys } from '@/entities/message/queries';
 import { getApiBase } from '@/shared/config/env';
 import { clientLogger, newTraceId } from '@/shared/logger';
+import { toast } from '@/shared/ui/toast';
 import type {
   SseAssistantStartEvent,
   SseDeltaEvent,
@@ -116,10 +117,9 @@ export function useRegenerateMessage(chatId: string) {
 
   const stop = useCallback(() => {
     if (useStreamStore.getState().status === 'streaming') {
-      useStreamStore.setState((s) => {
-        s.status = 'stopping';
-      });
+      useStreamStore.getState().setStopping();
       abortActiveStream('user');
+      toast('Генерация остановлена');
     }
   }, []);
 

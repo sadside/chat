@@ -24,12 +24,13 @@ export interface StreamState {
   replaceOptimisticUserId: (realId: string) => void;
   appendDelta: (text: string) => void;
   finishStream: (finalContent: string, aborted: boolean) => void;
+  setStopping: () => void;
   setError: (message: string) => void;
   reset: () => void;
 }
 
 const INITIAL: Omit<StreamState, keyof Pick<StreamState,
-  'startStream' | 'setAssistantId' | 'replaceOptimisticUserId' | 'appendDelta' | 'finishStream' | 'setError' | 'reset'
+  'startStream' | 'setAssistantId' | 'replaceOptimisticUserId' | 'appendDelta' | 'finishStream' | 'setStopping' | 'setError' | 'reset'
 >> = {
   chatId: null,
   status: 'idle',
@@ -83,6 +84,12 @@ export const useStreamStore = create<StreamState>()(
         s.status = 'done';
         s.assistantContent = finalContent;
         s.aborted = aborted;
+      });
+    },
+
+    setStopping() {
+      set((s) => {
+        if (s.status === 'streaming') s.status = 'stopping';
       });
     },
 
