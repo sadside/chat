@@ -181,9 +181,17 @@ export function useStreamChat(chatId: string) {
     }
   }, []);
 
+  const retry = useCallback(async () => {
+    const last = useStreamStore.getState().lastUserContent;
+    if (!last) return;
+    useStreamStore.getState().reset();
+    await startMessageStream({ chatId, content: last, qc });
+  }, [chatId, qc]);
+
   return {
     send,
     stop,
+    retry,
     isStreaming: store.status === 'streaming' || store.status === 'stopping',
     status: store.status,
   };

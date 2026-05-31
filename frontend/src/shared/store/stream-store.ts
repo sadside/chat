@@ -17,6 +17,8 @@ export interface StreamState {
   assistantContent: string;
   aborted: boolean;
   error: string | null;
+  // Remembered for the Retry button after an error.
+  lastUserContent: string | null;
 
   // Actions
   startStream: (chatId: string, optimisticContent: string) => void;
@@ -39,6 +41,7 @@ const INITIAL: Omit<StreamState, keyof Pick<StreamState,
   assistantContent: '',
   aborted: false,
   error: null,
+  lastUserContent: null,
 };
 
 export const useStreamStore = create<StreamState>()(
@@ -58,6 +61,9 @@ export const useStreamStore = create<StreamState>()(
         s.assistantContent = '';
         s.aborted = false;
         s.error = null;
+        // Empty string is the "regenerate" sentinel from the regenerate
+        // hook — don't overwrite a real prior message with it.
+        if (optimisticContent) s.lastUserContent = optimisticContent;
       });
     },
 

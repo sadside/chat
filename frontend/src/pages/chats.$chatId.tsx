@@ -27,7 +27,7 @@ function ChatPage() {
   const { chatId } = Route.useParams();
 
   const { data: messages = [], isLoading } = useMessagesQuery(chatId);
-  const { send, stop, isStreaming, status } = useStreamChat(chatId);
+  const { send, stop, retry, isStreaming, status } = useStreamChat(chatId);
   const { regenerate } = useRegenerateMessage(chatId);
 
   // When we arrived here from the Home submit handler, a stream for this
@@ -68,9 +68,15 @@ function ChatPage() {
           disabled={status === 'error'}
         />
         {status === 'error' && (
-          <p className="mt-1 text-xs text-destructive text-center">
-            Не удалось отправить сообщение. Попробуйте ещё раз.
-          </p>
+          <div className="mt-2 flex items-center justify-center gap-3">
+            <p className="text-xs text-destructive">Не удалось получить ответ.</p>
+            <button
+              onClick={retry}
+              className="text-xs underline underline-offset-2 hover:opacity-80"
+            >
+              Повторить
+            </button>
+          </div>
         )}
       </div>
     </div>
