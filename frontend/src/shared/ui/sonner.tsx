@@ -21,12 +21,12 @@ export function Toaster() {
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              'flex min-w-[280px] items-start justify-between gap-3 rounded-lg border px-4 py-3 text-sm shadow-lg',
+              'flex min-w-[280px] items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm shadow-xl backdrop-blur-xl',
               t.variant === 'destructive'
-                ? 'border-red-500/30 bg-red-950 text-red-200'
-                : 'border-[--color-border] bg-[--color-background] text-[--color-foreground]'
+                ? 'border-[--color-destructive]/40 bg-[--color-destructive]/10 text-[--color-destructive]'
+                : 'border-[--color-border] bg-[--color-background]/80 text-[--color-foreground]'
             )}
           >
             <span>{t.message}</span>
