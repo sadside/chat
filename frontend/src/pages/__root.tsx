@@ -15,6 +15,7 @@ import { Toaster } from '@/shared/ui/sonner';
 import { useMeQuery } from '@/entities/user/api';
 import { useAuthStore } from '@/shared/store/auth-store';
 import { CommandPalette, usePalette } from '@/features/command-palette';
+import { GlobalSearch, useGlobalSearch } from '@/features/global-search';
 import { useHotkey } from '@/shared/hooks/use-hotkey';
 import { useToggleTheme } from '@/features/toggle-theme/use-toggle-theme';
 
@@ -27,8 +28,10 @@ function RootLayout() {
 
   // Global hotkeys
   const togglePalette = usePalette((s) => s.toggle);
+  const toggleSearch = useGlobalSearch((s) => s.toggle);
   const { toggle: toggleTheme } = useToggleTheme();
   useHotkey({ key: 'k', meta: true }, togglePalette, true);
+  useHotkey({ key: 'f', meta: true }, toggleSearch, true);
   useHotkey({ key: 'l', meta: true, shift: true }, toggleTheme, true);
 
   // Close mobile drawer when resizing to desktop
@@ -54,6 +57,7 @@ function RootLayout() {
         <Outlet />
         <Toaster />
         <CommandPalette />
+        <GlobalSearch />
       </ErrorBoundary>
     );
   }

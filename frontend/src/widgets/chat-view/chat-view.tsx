@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { useAutoScroll } from '@/shared/hooks/use-auto-scroll';
@@ -14,6 +14,7 @@ import type { Message } from '@/entities/message/types';
 interface ChatViewProps {
   messages: Message[];
   chatId: string;
+  focusId?: string | undefined;
   onRegenerate?: (() => void) | undefined;
   onExamplePrompt?: ((prompt: string) => void) | undefined;
   onEditMessage?: ((messageId: string, content: string) => void) | undefined;
@@ -29,6 +30,7 @@ function formatDividerDate(dateStr: string): string {
 export function ChatView({
   messages,
   chatId,
+  focusId,
   onRegenerate,
   onExamplePrompt,
   onEditMessage,
@@ -105,6 +107,20 @@ export function ChatView({
     stream.status,
   ]);
 
+  // Deep-link from global search: ?focus=<messageId> scrolls into view and
+  // flashes a ring. Runs once after messages load.
+  useEffect(() => {
+    if (!focusId || messages.length === 0) return;
+    const el = document.getElementById(`msg-${focusId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('ring-2', 'ring-[--color-primary]/60', 'rounded-xl', 'transition-all');
+    const t = setTimeout(() => {
+      el.classList.remove('ring-2', 'ring-[--color-primary]/60');
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [focusId, messages.length]);
+
   if (messages.length === 0 && !isStreaming) {
     return <EmptyState {...(onExamplePrompt ? { onPromptClick: onExamplePrompt } : {})} />;
   }
@@ -155,17 +171,18 @@ export function ChatView({
             isStreaming && msg.id === stream.assistantMessageId && msg.role === 'assistant';
 
           return (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              streaming={isStreamingThis}
-              showRegenerateButton={msg.id === lastAssistantId && !isStreaming}
-              highlight={filterActive ? query : undefined}
-              {...(onRegenerate ? { onRegenerate } : {})}
-              {...(onEditMessage
-                ? { onEdit: (c: string) => onEditMessage(msg.id, c) }
-                : {})}
-            />
+            <div key={msg.id} id={`msg-${msg.id}`}>
+              <MessageBubble
+                message={msg}
+                streaming={isStreamingThis}
+                showRegenerateButton={msg.id === lastAssistantId && !isStreaming}
+                highlight={filterActive ? query : undefined}
+                {...(onRegenerate ? { onRegenerate } : {})}
+                {...(onEditMessage
+                  ? { onEdit: (c: string) => onEditMessage(msg.id, c) }
+                  : {})}
+              />
+            </div>
           );
         })}
 

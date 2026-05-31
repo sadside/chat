@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { z } from 'zod';
 import { useMessagesQuery } from '@/entities/message/queries';
 import { ChatView } from '@/widgets/chat-view';
 import { Composer } from '@/widgets/composer';
@@ -10,7 +11,10 @@ import { Skeleton } from '@/shared/ui/skeleton';
 import { queryClient } from '@/app/providers/query-provider';
 import { meQueryOptions } from '@/entities/user/api';
 
+const searchSchema = z.object({ focus: z.string().optional() });
+
 export const Route = createFileRoute('/chats/$chatId')({
+  validateSearch: (s) => searchSchema.parse(s),
   beforeLoad: async () => {
     // Check auth — redirect to /auth if unauthenticated
     try {
@@ -26,6 +30,7 @@ export const Route = createFileRoute('/chats/$chatId')({
 
 function ChatPage() {
   const { chatId } = Route.useParams();
+  const { focus } = Route.useSearch();
 
   const { data: messages = [], isLoading } = useMessagesQuery(chatId);
   const { send, stop, retry, isStreaming, status } = useStreamChat(chatId);
@@ -59,6 +64,7 @@ function ChatPage() {
       <ChatView
         messages={messages}
         chatId={chatId}
+        focusId={focus}
         onRegenerate={regenerate}
         onExamplePrompt={(p) => send(p)}
         onEditMessage={edit}
