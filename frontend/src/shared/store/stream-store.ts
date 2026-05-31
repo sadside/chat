@@ -19,6 +19,8 @@ export interface StreamState {
   error: string | null;
   // Remembered for the Retry button after an error.
   lastUserContent: string | null;
+  // Wall-clock start of the assistant stream for the live progress widget.
+  startedAt: number | null;
 
   // Actions
   startStream: (chatId: string, optimisticContent: string) => void;
@@ -42,6 +44,7 @@ const INITIAL: Omit<StreamState, keyof Pick<StreamState,
   aborted: false,
   error: null,
   lastUserContent: null,
+  startedAt: null,
 };
 
 export const useStreamStore = create<StreamState>()(
@@ -64,6 +67,7 @@ export const useStreamStore = create<StreamState>()(
         // Empty string is the "regenerate" sentinel from the regenerate
         // hook — don't overwrite a real prior message with it.
         if (optimisticContent) s.lastUserContent = optimisticContent;
+        s.startedAt = Date.now();
       });
     },
 

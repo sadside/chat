@@ -5,6 +5,7 @@ import { useAutoScroll } from '@/shared/hooks/use-auto-scroll';
 import { useStreamStore } from '@/shared/store/stream-store';
 import { MessageBubble } from './message-bubble';
 import { EmptyState } from './empty-state';
+import { GenerationProgress } from './generation-progress';
 import type { Message } from '@/entities/message/types';
 
 interface ChatViewProps {
@@ -147,6 +148,7 @@ export function ChatView({ messages, chatId, onRegenerate, onExamplePrompt }: Ch
           </div>
         )}
 
+        <GenerationProgress />
         <div ref={anchorRef} className="h-1" aria-hidden="true" />
       </div>
     </div>
