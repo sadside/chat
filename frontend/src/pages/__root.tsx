@@ -14,6 +14,9 @@ import { ErrorBoundary } from '@/app/error-boundary';
 import { Toaster } from '@/shared/ui/sonner';
 import { useMeQuery } from '@/entities/user/api';
 import { useAuthStore } from '@/shared/store/auth-store';
+import { CommandPalette, usePalette } from '@/features/command-palette';
+import { useHotkey } from '@/shared/hooks/use-hotkey';
+import { useToggleTheme } from '@/features/toggle-theme/use-toggle-theme';
 
 function RootLayout() {
   const { sidebarOpen, closeSidebar } = useUiStore();
@@ -21,6 +24,12 @@ function RootLayout() {
   const { data: meUser } = useMeQuery();
   const { setUser, clearUser } = useAuthStore();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Global hotkeys
+  const togglePalette = usePalette((s) => s.toggle);
+  const { toggle: toggleTheme } = useToggleTheme();
+  useHotkey({ key: 'k', meta: true }, togglePalette, true);
+  useHotkey({ key: 'l', meta: true, shift: true }, toggleTheme, true);
 
   // Close mobile drawer when resizing to desktop
   useEffect(() => {
@@ -44,6 +53,7 @@ function RootLayout() {
       <ErrorBoundary>
         <Outlet />
         <Toaster />
+        <CommandPalette />
       </ErrorBoundary>
     );
   }
@@ -79,6 +89,7 @@ function RootLayout() {
         </div>
       </div>
       <Toaster />
+      <CommandPalette />
     </ErrorBoundary>
   );
 }
