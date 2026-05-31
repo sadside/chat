@@ -7,7 +7,7 @@ export interface Chat {
   updated_at: string;
 }
 
-export interface ChatCreateResponse extends Chat {}
+export type ChatCreateResponse = Chat;
 
 export interface ChatUpdatePayload {
   title?: string;
