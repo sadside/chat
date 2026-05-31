@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { clientLogger, newTraceId } from '@/shared/logger';
 
 interface Props {
   children: ReactNode;
@@ -18,8 +19,30 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('[ErrorBoundary]', error, info.componentStack);
+    // Forward to telemetry pipeline. Wrap in try so a logger failure cannot
+    // cascade and re-trigger the error boundary.
+    try {
+      clientLogger.log('error', 'ui.boundary', {
+        traceId: newTraceId(),
+        message: error.message,
+        stack: (error.stack ?? '').slice(0, 2000),
+        componentStack: (info.componentStack ?? '').slice(0, 2000),
+      });
+    } catch {
+      /* swallow */
+    }
   }
+
+  private handleReset = () => {
+    // A bare state-reset only works if the underlying cause is gone. Reload
+    // the page so derived state (TanStack Query caches, zustand stores,
+    // hung SSE streams) is rebuilt from scratch.
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      this.setState({ hasError: false, error: null });
+    }
+  };
 
   render() {
     if (this.state.hasError) {
@@ -28,16 +51,16 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex h-full items-center justify-center p-8 text-center">
           <div className="max-w-md space-y-2">
             <p className="text-lg font-semibold text-[--color-destructive]">
-              Something went wrong
+              Что-то пошло не так
             </p>
             <p className="text-sm text-[--color-muted-foreground]">
-              {this.state.error?.message ?? 'An unexpected error occurred.'}
+              {this.state.error?.message ?? 'Произошла непредвиденная ошибка.'}
             </p>
             <button
               className="mt-4 rounded-md bg-[--color-primary] px-4 py-2 text-sm text-[--color-primary-foreground] hover:opacity-90"
-              onClick={() => this.setState({ hasError: false, error: null })}
+              onClick={this.handleReset}
             >
-              Try again
+              Перезагрузить
             </button>
           </div>
         </div>
