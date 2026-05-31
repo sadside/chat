@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Copy, Check, RefreshCw, ClipboardCopy, Pencil } from 'lucide-react';
 import { MarkdownContent } from '@/shared/ui/markdown-content';
 import { useCopyToClipboard } from '@/shared/hooks/use-clipboard';
+import { NovaAvatar } from '@/shared/ui/nova-avatar';
 import { Button } from '@/shared/ui/button';
 import { toast } from '@/shared/ui/toast';
 import { cn } from '@/shared/lib/utils';
@@ -64,127 +65,140 @@ export function MessageBubble({
     setEditing(false);
   };
 
-  return (
-    // Mount-only fade-in via Tailwind. `animate-in` fires exactly once when
-    // the element enters the DOM and does not replay during streaming deltas.
-    <div
-      className={cn(
-        'group flex w-full',
-        'animate-in fade-in-0 slide-in-from-bottom-1 duration-150 ease-out',
-        isUser ? 'justify-end' : 'justify-start'
+  const actionRow = !editing && (
+    <div className="flex items-center gap-1 px-1 opacity-0 transition-opacity group-hover:opacity-100">
+      {isUser && onEdit && (
+        <button
+          onClick={startEditing}
+          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Редактировать сообщение"
+          title="Редактировать"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
       )}
-    >
+      <button
+        onClick={() => copy(message.content)}
+        className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        aria-label="Копировать сообщение"
+        title="Копировать как текст"
+      >
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-green-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
+      </button>
+      {!isUser && (
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(message.content).then(
+              () => toast('Скопировано как Markdown'),
+              () => toast('Не удалось скопировать', 'destructive'),
+            );
+          }}
+          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Копировать как Markdown"
+          title="Копировать как Markdown"
+        >
+          <ClipboardCopy className="h-3.5 w-3.5" />
+        </button>
+      )}
+      {showRegenerateButton && !isUser && onRegenerate && (
+        <button
+          onClick={onRegenerate}
+          className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Сгенерировать снова"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+
+  if (isUser) {
+    return (
       <div
         className={cn(
-          'flex flex-col gap-1 min-w-0',
-          isUser ? 'items-end max-w-[min(68ch,85%)]' : 'items-start max-w-full flex-1'
+          'group flex w-full justify-end',
+          'animate-in fade-in-0 slide-in-from-bottom-1 duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
         )}
       >
+        <div className="flex min-w-0 max-w-[min(68ch,85%)] flex-col items-end gap-1">
+          <div
+            className={cn(
+              'relative text-[15px] leading-relaxed',
+              'rounded-2xl rounded-tr-md px-4 py-2.5',
+              'bg-gradient-to-br from-[oklch(0.65_0.20_280/0.14)] to-[oklch(0.65_0.20_280/0.06)]',
+              'border border-[oklch(0.65_0.20_280/0.20)]',
+              'text-foreground shadow-sm',
+            )}
+          >
+            {editing ? (
+              <div className="flex w-full flex-col gap-2">
+                <textarea
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  rows={Math.min(8, draft.split('\n').length + 1)}
+                  className="w-full resize-none rounded-md border border-[--color-border] bg-background p-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/60"
+                  aria-label="Редактирование сообщения"
+                />
+                <div className="flex items-center justify-end gap-2">
+                  <Button size="sm" variant="ghost" onClick={cancelEditing}>
+                    Отмена
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={!draft.trim() || draft.trim() === message.content.trim()}
+                    onClick={saveEditing}
+                  >
+                    Сохранить и пересоздать
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="whitespace-pre-wrap break-words">
+                {highlight ? highlightText(message.content, highlight) : message.content}
+              </p>
+            )}
+          </div>
+          {actionRow}
+        </div>
+      </div>
+    );
+  }
+
+  // Assistant — rail + avatar + body.
+  return (
+    <div
+      className={cn(
+        'group flex w-full gap-3',
+        'animate-in fade-in-0 slide-in-from-bottom-1 duration-150 ease-[cubic-bezier(0.16,1,0.3,1)]',
+      )}
+    >
+      <div className="flex flex-col items-center pt-0.5">
+        <NovaAvatar />
+        <div
+          className="mt-1 w-px flex-1 bg-gradient-to-b from-[oklch(0.65_0.20_280/0.55)] to-transparent"
+          aria-hidden="true"
+        />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div
           className={cn(
-            'relative text-[15px] leading-relaxed',
-            isUser
-              ? [
-                  'rounded-2xl rounded-tr-md px-4 py-2.5',
-                  'bg-[color-mix(in_oklch,var(--color-primary)_14%,transparent)]',
-                  'border border-[--color-primary]/15',
-                  'text-foreground',
-                ].join(' ')
-              : 'text-foreground w-full',
-            message.aborted && !isUser && 'opacity-70'
+            'relative text-[15px] leading-relaxed text-foreground',
+            message.aborted && 'opacity-70',
           )}
         >
-          {isUser && editing ? (
-            <div className="flex w-full flex-col gap-2">
-              <textarea
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                rows={Math.min(8, draft.split('\n').length + 1)}
-                className="w-full resize-none rounded-md border border-[--color-border] bg-background p-2 text-sm leading-6 outline-none focus:ring-2 focus:ring-ring/60"
-                aria-label="Редактирование сообщения"
-              />
-              <div className="flex items-center justify-end gap-2">
-                <Button size="sm" variant="ghost" onClick={cancelEditing}>
-                  Отмена
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={!draft.trim() || draft.trim() === message.content.trim()}
-                  onClick={saveEditing}
-                >
-                  Сохранить и пересоздать
-                </Button>
-              </div>
-            </div>
-          ) : isUser ? (
-            <p className="whitespace-pre-wrap break-words">
-              {highlight ? highlightText(message.content, highlight) : message.content}
-            </p>
-          ) : (
-            <MarkdownContent content={message.content} streaming={streaming} />
-          )}
-
-          {message.aborted && !isUser && (
+          <MarkdownContent content={message.content} streaming={streaming} />
+          {message.aborted && (
             <span className="mt-1 block text-xs text-muted-foreground">
               — Остановлено
             </span>
           )}
         </div>
-
-        {/* Action row — hidden in edit mode */}
-        {!editing && (
-        <div className="flex items-center gap-1 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {isUser && onEdit && (
-            <button
-              onClick={startEditing}
-              className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Редактировать сообщение"
-              title="Редактировать"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          )}
-          <button
-            onClick={() => copy(message.content)}
-            className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Копировать сообщение"
-            title="Копировать как текст"
-          >
-            {copied ? (
-              <Check className="h-3.5 w-3.5 text-green-500" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" />
-            )}
-          </button>
-
-          {!isUser && (
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(message.content).then(
-                  () => toast('Скопировано как Markdown'),
-                  () => toast('Не удалось скопировать', 'destructive'),
-                );
-              }}
-              className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Копировать как Markdown"
-              title="Копировать как Markdown"
-            >
-              <ClipboardCopy className="h-3.5 w-3.5" />
-            </button>
-          )}
-
-          {showRegenerateButton && !isUser && onRegenerate && (
-            <button
-              onClick={onRegenerate}
-              className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Сгенерировать снова"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        )}
+        {actionRow}
       </div>
     </div>
   );
