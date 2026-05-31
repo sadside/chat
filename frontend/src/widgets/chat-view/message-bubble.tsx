@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Copy, Check, RefreshCw, ClipboardCopy, Pencil } from 'lucide-react';
 import { MarkdownContent } from '@/shared/ui/markdown-content';
+import { StreamingView } from '@/shared/ui/streaming-view';
 import { useCopyToClipboard } from '@/shared/hooks/use-clipboard';
 import { NovaAvatar } from '@/shared/ui/nova-avatar';
 import { Button } from '@/shared/ui/button';
@@ -191,7 +192,11 @@ export function MessageBubble({
             message.aborted && 'opacity-70',
           )}
         >
-          <MarkdownContent content={message.content} streaming={streaming} />
+          {streaming ? (
+            <StreamingView content={message.content} />
+          ) : (
+            <MarkdownContent content={message.content} streaming={false} />
+          )}
           {message.aborted && (
             <span className="mt-1 block text-xs text-muted-foreground">
               — Остановлено
