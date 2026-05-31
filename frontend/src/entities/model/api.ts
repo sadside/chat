@@ -4,6 +4,9 @@ import { apiClient as api } from '@/shared/api/client';
 export interface LlmModel {
   id: string;
   name: string;
+  description: string;
+  context_window: number;
+  capabilities: string[];
 }
 
 export const modelKeys = {
